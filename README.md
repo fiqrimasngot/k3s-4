@@ -52,6 +52,8 @@ Before we get started everything below must be taken into consideration, you mus
 
 ### Debian for AMD64
 
+Setup cloud init https://pycvala.de/blog/proxmox/create-your-own-debian-12-cloud-init-template/
+
 1. Download the latest stable release of Debian from [here](https://cdimage.debian.org/debian-cd/current/amd64/iso-dvd), then follow [this guide](https://www.linuxtechi.com/how-to-install-debian-12-step-by-step) to get it installed. Deviations from the guide:
 
     ```txt
