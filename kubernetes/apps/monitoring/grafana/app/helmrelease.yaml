@@ -158,20 +158,19 @@ spec:
     serviceMonitor:
       enabled: true
     ingress:
-      main:
-        enabled: true
-        ingressClassName: external
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-          hajimari.io/icon: video-input-antenna
-        hosts:
-          - host: &host "grafana.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
-        tls:
-          - hosts:
-              - *host
+      enabled: true
+      className: external
+      annotations:
+        external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+        hajimari.io/icon: video-input-antenna
+      hosts:
+        - host: &host "grafana.${SECRET_DOMAIN}"
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - hosts:
+            - *host
     persistence:
       enabled: true
       storageClassName: local-path
