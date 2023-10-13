@@ -172,19 +172,19 @@ spec:
 
       session:
         redis:
-          enabled: true
-          enabledSecret: true
+          enabled: false
+          enabledSecret: false
           host: redis-master.databases.svc.cluster.local
 
       storage:
         postgres:
-          enabled: true
+          enabled: false
           host: ${SECRET_POSTGRES_HOST} # postgresql.databases.svc.cluster.local
 
       notifier:
         smtp:
-          enabled: true
-          enabledSecret: true
+          enabled: false
+          enabledSecret: false
           host: smtp.gmail.com
           port: 587
           timeout: 5s
