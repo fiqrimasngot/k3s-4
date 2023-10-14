@@ -1,14 +1,17 @@
 ---
-apiVersion: source.toolkit.fluxcd.io/v1
+apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: GitRepository
 metadata:
   name: home-kubernetes
   namespace: flux-system
 spec:
-  interval: 30m
+  interval: 10m
+  # 6a: Change this to your user and repo names
+  url: "ssh://git@github.com/{{ bootstrap_github_username }}/{{ bootstrap_github_repository_name }}.git"
   ref:
     branch: {{ bootstrap_github_repository_branch | default('main', true) }}
-  url: "https://github.com/{{ bootstrap_github_username }}/{{ bootstrap_github_repository_name }}.git"
+  secretRef:
+    name: github-deploy-key
   ignore: |
     # exclude all
     /*

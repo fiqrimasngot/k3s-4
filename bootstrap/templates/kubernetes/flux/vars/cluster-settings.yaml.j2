@@ -12,7 +12,10 @@ data:
   CLUSTER_CIDR: "{{ bootstrap_cluster_cidr.split(',')[0] }}"
   SERVICE_CIDR: "{{ bootstrap_service_cidr.split(',')[0] }}"
   NODE_CIDR: "{{ bootstrap_node_cidr }}"
+  SVC_REDIS_ADDR_V4: "{{ bootstrap_redis_addr_v4 }}"
+  SVC_POSTGRES_ADDR_V4: "{{ bootstrap_posgres_add_v4 }}"
   {% if bootstrap_ipv6_enabled | default(false) %}
   CLUSTER_CIDR_V6: "{{ bootstrap_cluster_cidr.split(',')[1] }}"
   SERVICE_CIDR_V6: "{{ bootstrap_service_cidr.split(',')[1] }}"
+  SVC_POSTGRES_ADDR_V6: "{{ bootstrap_posgres_add_v6.split(',')[1] }}"
   {% endif %}
