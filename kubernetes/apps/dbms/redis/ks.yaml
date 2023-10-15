@@ -6,8 +6,8 @@ metadata:
   name: cluster-apps-redis
   namespace: flux-system
 spec:
-  dependsOn:
-    - name: cluster-apps-external-secrets-stores
+  # dependsOn:
+  #   - name: cluster-apps-external-secrets-stores
   path: ./kubernetes/apps/dbms/redis/app
   prune: true
   sourceRef:
