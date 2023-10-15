@@ -31,8 +31,8 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     image:
-      repository: haproxy
       tag: "2.8"
+      repository: haproxy
     service:
       main:
         enabled: true
