@@ -1,0 +1,64 @@
+---
+session:
+  redis:
+    high_availability:
+      sentinel_name: redis-master
+      nodes:
+        - host: redis-node-0.redis-headless.database.svc.cluster.local
+          port: 26379
+        - host: redis-node-1.redis-headless.database.svc.cluster.local
+          port: 26379
+        - host: redis-node-2.redis-headless.database.svc.cluster.local
+          port: 26379
+
+access_control:
+  default_policy: two_factor
+  networks:
+    - name: internal
+      networks: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+  rules:
+    # - domain_regex: "(sonarr|radarr|readarr).${SECRET_DOMAIN}"
+    #   resources: ["^/api"]
+    #   policy: bypass
+    #   query:
+    #     - - operator: "pattern"
+    #         key: "apikey"
+    #         value: "(${SONARR_API_KEY}|${RADARR_API_KEY}|${READARR_API_KEY})"
+    # - domain: "hajimari.${SECRET_DOMAIN}"
+    #   domain_regex:
+    #     - "k8s-([0-9]+).${SECRET_DOMAIN}"
+    #     - "(status|kubernetes|prometheus).${SECRET_DOMAIN}"
+    #     - "(nzbget|sonarr|radarr|prowlarr|readarr).${SECRET_DOMAIN}"
+    #   policy: two_factor
+    #   subject:
+    #     - ["group:admin"]
+    # - domain: "calibre.${SECRET_DOMAIN}"
+    #   policy: two_factor
+    #   subject:
+    #     - ["group:admin"]
+    #     - ["group:ebook"]
+
+identity_providers:
+  oidc:
+    cors:
+      endpoints: ["authorization", "token", "revocation", "introspection"]
+      allowed_origins_from_client_redirect_uris: true
+    # clients:
+    #   - id: grafana
+    #     description: Grafana
+    #     secret: "${GRAFANA_OAUTH_CLIENT_SECRET}"
+    #     public: false
+    #     authorization_policy: two_factor
+    #     pre_configured_consent_duration: 1y
+    #     scopes: ["openid", "profile", "groups", "email"]
+    #     redirect_uris: ["https://grafana.${SECRET_DOMAIN}/login/generic_oauth"]
+    #     userinfo_signing_algorithm: none
+    #   - id: pgadmin
+    #     description: PG Admin
+    #     secret: "${PG_OAUTH2_CLIENT_SECRET}"
+    #     public: false
+    #     authorization_policy: two_factor
+    #     pre_configured_consent_duration: 1y
+    #     scopes: ["openid", "profile", "groups", "email"]
+    #     redirect_uris: ["https://pgadmin.${SECRET_DOMAIN}/oauth2/authorize"]
+    #     userinfo_signing_algorithm: none

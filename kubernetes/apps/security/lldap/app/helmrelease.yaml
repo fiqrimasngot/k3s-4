@@ -1,5 +1,4 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.haraldkoch.ca/helm.toolkit.fluxcd.io/helmrelease_v2beta1.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
@@ -17,6 +16,7 @@ spec:
         namespace: flux-system
   maxHistory: 2
   install:
+    createNamespace: true
     remediation:
       retries: 3
   upgrade:
@@ -28,11 +28,14 @@ spec:
   values:
     initContainers:
       01-init-db:
-        image: ghcr.io/haraldkoch/postgres-init:15.4
+        image: ghcr.io/onedr0p/postgres-init:14.9
         imagePullPolicy: IfNotPresent
-        envFrom: &envFrom
-          - secretRef:
-              name: lldap-secret
+        env:
+          INIT_POSTGRES_DBNAME: lldap
+          INIT_POSTGRES_HOST: postgresql.storage.svc.cluster.local
+          INIT_POSTGRES_USER: "${LLDAP_POSTGRES_USER}"
+          INIT_POSTGRES_PASS: "${LLDAP_POSTGRES_PASS}"
+          INIT_POSTGRES_SUPER_PASS: "${POSTGRES_SUPER_PASS}"
     controller:
       replicas: 2
       strategy: RollingUpdate
@@ -41,14 +44,27 @@ spec:
     image:
       repository: ghcr.io/lldap/lldap
       # TODO: Switch to release tag on next release
-      tag: latest-alpine@sha256:117b47177236ff1f6397bf6524b7e840bbd73a11e148c6d8fa81337187df3409
+      tag: latest-alpine@sha256:49a328c0318e6b6325454a191ab259aeae73ef3517a9262673544e220713802d
     env:
       TZ: ${TIMEZONE}
       LLDAP_HTTP_PORT: &port 80
       LLDAP_HTTP_URL: https://lldap.${SECRET_DOMAIN}
       LLDAP_LDAP_PORT: &ldapPort 389
-      LLDAP_LDAP_BASE_DN: dc=home,dc=arpa
-    envFrom: *envFrom
+      LLDAP_LDAP_BASE_DN: "dc=akudanlasagna,dc=online"
+
+      LLDAP_JWT_SECRET: "${LLDAP_JWT_SECRET}"
+      LLDAP_LDAP_USER_PASS: "${LLDAP_LDAP_USER_PASS}"
+      # LLDAP_USER_DN: "${LLDAP_USER_DN}"
+      LLDAP_LDAP_USER_EMAIL: "${LLDAP_LDAP_USER_EMAIL}"
+      # LLDAP_SERVER_KEY_SEED: "${LLDAP_SERVER_KEY_SEED}"
+      LLDAP_DATABASE_URL: "postgres://${LLDAP_POSTGRES_USER}:${LLDAP_POSTGRES_PASS}@postgresql.storage.svc.cluster.local/lldap"
+
+      # LLDAP_SMTP_OPTIONS__ENABLE_PASSWORD_RESET: "true"
+      # LLDAP_SMTP_OPTIONS__SERVER: smtp-relay.networking.svc.cluster.local
+      # LLDAP_SMTP_OPTIONS__PORT: "${SMTP_RELAY_PORT}"
+      # LLDAP_SMTP_OPTIONS__FROM: "noreply@${SECRET_DOMAIN}"
+      # LLDAP_SMTP_OPTIONS__TO: "noreply@${SECRET_DOMAIN}"
+      # LLDAP_SMTP_OPTIONS__SMTP_ENCRYPTION: "NONE"
     service:
       main:
         ports:
@@ -63,8 +79,9 @@ spec:
         ingressClassName: external
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          hajimari.io/icon: "mdi:dictionary"
         hosts:
-          - host: &host "{{ .Release.Name }}.${SECRET_DOMAIN}"
+          - host: &host "lldap.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
