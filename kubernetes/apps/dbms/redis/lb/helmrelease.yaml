@@ -37,8 +37,7 @@ spec:
       main:
         enabled: true
         type: LoadBalancer
-        externalIPs: ["${SVC_REDIS_ADDR_V4}"]
-        # externalIPs: ["${SVC_REDIS_ADDR_V4}", "${SVC_REDIS_ADDR_V6}"]
+        externalIPs: ${SVC_REDIS_ADDR_V4}
         ipFamilyPolicy: PreferDualStack
         ports:
           http:
@@ -56,9 +55,8 @@ spec:
     ingress:
       main:
         enabled: true
-        ingressClassName: external
+        ingressClassName: nginx
         annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
           hajimari.io/appName: "Redis Load Balancer"
           hajimari.io/icon: simple-icons:redis
         hosts:
