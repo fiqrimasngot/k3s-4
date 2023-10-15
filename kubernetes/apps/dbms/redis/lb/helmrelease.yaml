@@ -55,8 +55,9 @@ spec:
     ingress:
       main:
         enabled: true
-        ingressClassName: nginx
+        ingressClassName: external
         annotations:
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
           hajimari.io/appName: "Redis Load Balancer"
           hajimari.io/icon: simple-icons:redis
         hosts:
