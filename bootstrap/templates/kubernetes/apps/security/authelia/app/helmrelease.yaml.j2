@@ -1,235 +1,170 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.haraldkoch.ca/helm.toolkit.fluxcd.io/helmrelease_v2beta1.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: authelia
+  name: &app authelia
   namespace: security
 spec:
-  interval: 5m
+  interval: 30m
   chart:
     spec:
-      # renovate: registryUrl=https://charts.authelia.com
-      chart: authelia
-      version: 0.8.38
+      chart: app-template
+      version: 1.5.1
       sourceRef:
         kind: HelmRepository
-        name: authelia
+        name: bjw-s
         namespace: flux-system
-      interval: 5m
+  maxHistory: 2
   install:
-    timeout: 10m
     remediation:
       retries: 3
   upgrade:
-    timeout: 10m
+    cleanupOnFail: true
     remediation:
       retries: 3
-      remediateLastFailure: true
-    cleanupOnFail: true
-  rollback:
-    timeout: 10m
-    recreate: true
-    cleanupOnFail: true
-
+  uninstall:
+    keepHistory: false
+  dependsOn:
+    - name: lldap
+      namespace: security
+    - name: redis
+      namespace: dbms
   values:
-    domain: ${SECRET_DOMAIN}
-
+    initContainers:
+      01-init-db:
+        image: ghcr.io/haraldkoch/postgres-init:15.4
+        imagePullPolicy: IfNotPresent
+        envFrom: &envFrom
+          - secretRef:
+              name: authelia-secret
+    controller:
+      replicas: 2
+      strategy: RollingUpdate
+      annotations:
+        reloader.stakater.com/auto: "true"
+    image:
+      repository: ghcr.io/authelia/authelia
+      tag: master@sha256:956878fe74477f8be6277f9d95b222e00c33b625aab8e7b59e11dac403d82e57
+    args: ["--config", "/config/configuration.yml", "--config.experimental.filters", "expand-env"]
+    env:
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ADDITIONAL_GROUPS_DN: ou=groups
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ADDITIONAL_USERS_DN: ou=people
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_BASE_DN: dc=home,dc=arpa
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ATTRIBUTES_DISPLAY_NAME: displayName
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_GROUPS_FILTER: (member={dn})
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ATTRIBUTES_GROUP_NAME: cn
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_IMPLEMENTATION: custom
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ATTRIBUTES_MAIL: mail
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_START_TLS: "false"
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_TIMEOUT: 5s
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ADDRESS: ldap://lldap.security.svc.cluster.local:389
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_USER: uid=authelia,ou=people,dc=home,dc=arpa
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ATTRIBUTES_USERNAME: uid
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_USERS_FILTER: (&({username_attribute}={input})(objectClass=person))
+      AUTHELIA_AUTHENTICATION_BACKEND_PASSWORD_RESET_DISABLE: "true"
+      AUTHELIA_AUTHENTICATION_BACKEND_REFRESH_INTERVAL: 1m
+      AUTHELIA_DEFAULT_REDIRECTION_URL: https://auth.${SECRET_DOMAIN}
+      AUTHELIA_DUO_API_DISABLE: "true"
+      AUTHELIA_LOG_LEVEL: info
+      AUTHELIA_NOTIFIER_DISABLE_STARTUP_CHECK: "true"
+      AUTHELIA_NOTIFIER_SMTP_DISABLE_REQUIRE_TLS: "false"
+      AUTHELIA_NOTIFIER_SMTP_ADDRESS: smtp://smtp.${SECRET_DOMAIN}:25
+      AUTHELIA_NOTIFIER_SMTP_SENDER: "Authelia <authelia@${SECRET_DOMAIN}>"
+      AUTHELIA_SERVER_DISABLE_HEALTHCHECK: "true"
+      AUTHELIA_SERVER_ADDRESS: tcp://:80
+      AUTHELIA_SESSION_DOMAIN: ${SECRET_DOMAIN}
+      AUTHELIA_SESSION_NAME: authelia-home
+      AUTHELIA_SESSION_REDIS_DATABASE_INDEX: 14
+      AUTHELIA_SESSION_REDIS_HOST: redis.dbms.svc.cluster.local
+      AUTHELIA_TELEMETRY_METRICS_ADDRESS: tcp://0.0.0.0:8080
+      AUTHELIA_TELEMETRY_METRICS_ENABLED: "true"
+      AUTHELIA_THEME: dark
+      AUTHELIA_TOTP_ISSUER: authelia.com
+      AUTHELIA_WEBAUTHN_DISABLE: "true"
+      # needed for configuration.yaml substitutions
+      SECRET_DOMAIN: "${SECRET_DOMAIN}"
+      SECRET_HOMELAN_IPV4: "${SECRET_HOMELAN_IPV4}"
+    envFrom: *envFrom
+    enableServiceLinks: false
     service:
-      annotations:
-        prometheus.io/probe: "true"
-        prometheus.io/protocol: "http"
-
+      main:
+        ipFamilyPolicy: PreferDualStack
+        ports:
+          http:
+            port: &port 80
+          metrics:
+            enabled: true
+            port: 8080
+    serviceMonitor:
+      main:
+        enabled: true
+        endpoints:
+          - port: metrics
+            scheme: http
+            path: /metrics
+            interval: 1m
+            scrapeTimeout: 10s
+    probes:
+      liveness: &probes
+        enabled: true
+        custom: true
+        spec:
+          httpGet:
+            path: /api/health
+            port: *port
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+      readiness: *probes
+      startup:
+        enabled: false
     ingress:
-      enabled: true
-      ingressClassName: external
-      annotations:
-        external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        # hajimari.io/icon: simple-icons:grafana
-      # subdomain: login
-      hosts:
-        - &host "auth.${SECRET_DOMAIN}"
-      tls:
-        - hosts:
-            - *host
-
-    pod:
-      # Must be Deployment, DaemonSet, or StatefulSet.
-      kind: DaemonSet
-
-      env:
-        - name: TZ
-          value: ${TIMEZONE}
-
-      extraVolumeMounts:
-        - name: config-custom
-          mountPath: /config
-      extraVolumes:
-        - name: config-custom
-          configMap:
-            name: authelia-config-custom
-            items:
-              - key: users_database.yml
-                path: users_database.yml
-
-      resources:
-        requests:
-          cpu: 500m
-          memory: 1500Mi
-        limits: {}
-
-    ##
-    ## Authelia Config Map Generator
-    ##
-    configMap:
-      enabled: true
-      server:
-        read_buffer_size: 8192
-        write_buffer_size: 8192
-      theme: dark
-      authentication_backend:
-        disable_reset_password: true
-        ldap:
-          enabled: false
-        file:
-          enabled: true
-          password:
-            algorithm: argon2id
-
-      access_control:
-        ## Default policy can either be 'bypass', 'one_factor', 'two_factor' or 'deny'. It is the policy applied to any
-        ## resource if there is no policy to be applied to the user.
-        default_policy: deny
-
-        networks:
-          - name: private
-            networks:
-              - 0.0.0.0/0
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
-              - 10.32.1.0/16
-          - name: vpn
-            networks:
-              - 10.10.0.0/16
-
-        rules:
-          # bypass Authelia
-          - domain:
-              - login.${SECRET_DOMAIN}
-              - matrix.${SECRET_DOMAIN}
-            policy: bypass
-          # bypass Authelia LAN
-          - domain:
-              - sonarr.${SECRET_DOMAIN}
-              - radarr.${SECRET_DOMAIN}
-              - readarr.${SECRET_DOMAIN}
-              - lidarr.${SECRET_DOMAIN}
-              - mylar.${SECRET_DOMAIN}
-              - prowlarr.${SECRET_DOMAIN}
-              - sabnzbd.${SECRET_DOMAIN}
-              - books.${SECRET_DOMAIN}
-              - bazarr.${SECRET_DOMAIN}
-              - qb-vpn.${SECRET_DOMAIN}
-              - jellyfin.${SECRET_DOMAIN}
-              - tvheadend.${SECRET_DOMAIN}
-            policy: bypass
-            networks:
-              - private
-          # Bypass API urls for certain services
-          - domain:
-              - grafana.${SECRET_DOMAIN}
-              - matrix-admin.${SECRET_DOMAIN}
-            policy: bypass
-            resources:
-              - "^/api([/?].*)?$"
-              - "^/(.*)/api([/?].*)?$"
-              - "^/static([/?].*)?$"
-              - "^/manifest[.]json$"
-
-          # Deny admin services to users
-          - domain:
-              - alert-manager.${SECRET_DOMAIN}
-              - prometheus.${SECRET_DOMAIN}
-              - thanos.${SECRET_DOMAIN}
-              - rook.${SECRET_DOMAIN}
-              - goldilocks.${SECRET_DOMAIN}
-            subject: ["group:users"]
-            policy: deny
-
-          # One factor auth for LAN
-          - domain:
-              - "*.${SECRET_DOMAIN}"
-            policy: one_factor
-            subject: ["group:admins", "group:users"]
-            networks:
-              - private
-
-          # Two factors auth for WAN
-          - domain:
-              - "*.${SECRET_DOMAIN}"
-            subject: ["group:admins", "group:users"]
-            policy: two_factor
-
-      session:
-        redis:
-          enabled: false
-          enabledSecret: false
-          host: redis-master.databases.svc.cluster.local
-
-      storage:
-        postgres:
-          enabled: false
-          host: ${SECRET_POSTGRES_HOST} # postgresql.databases.svc.cluster.local
-
-      notifier:
-        smtp:
-          enabled: false
-          enabledSecret: false
-          host: smtp.gmail.com
-          port: 587
-          timeout: 5s
-          username: ${SECRET_SMTP_USER}
-          sender: ${SECRET_SMTP_USER}
-          ## HELO/EHLO Identifier. Some SMTP Servers may reject the default of localhost.
-          identifier: ${SECRET_DOMAIN}
-          ## Subject configuration of the emails sent.
-          ## {title} is replaced by the text from the notifier
-          subject: "[Authelia] {title}"
-          ## This address is used during the startup check to verify the email configuration is correct.
-          ## It's not important what it is except if your email server only allows local delivery.
-          startup_check_address: ${SECRET_SMTP_USER}
-          disable_require_tls: false
-          disable_html_emails: false
-
-    secret:
-      storage:
-        key: STORAGE_PASSWORD
-        value: "${SECRET_AUTHELIA_POSTGRES_PASSWORD}"
-        filename: STORAGE_PASSWORD
-      jwt:
-        key: JWT_TOKEN
-        value: "${SECRET_AUTHELIA_JWT_SECRET}"
-        filename: JWT_TOKEN
-      redis:
-        key: REDIS_PASSWORD
-        value: "${SECRET_REDIS_PASSWORD}"
-        filename: REDIS_PASSWORD
-      smtp:
-        key: SMTP_PASSWORD
-        value: "${SECRET_AUTHELIA_SMTP_PASSWORD}"
-        filename: SMTP_PASSWORD
-      storageEncryptionKey:
-        key: STORAGE_ENCRYPTION_KEY
-        value: "${SECRET_AUTHELIA_STORAGE_ENCRYPTION_KEY}"
-        filename: STORAGE_ENCRYPTION_KEY
-
-  postRenderers:
-    - kustomize:
-        patchesJson6902:
-          - target:
-              kind: Ingress
-              name: authelia
-            patch:
-              - op: add
-                path: /spec/ingressClassName
-                value: external
+      main:
+        enabled: true
+        ingressClassName: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          external-dns.home.arpa/enabled: "true"
+          hajimari.io/appName: authelia
+          hajimari.io/icon: mdi:shield-account
+          nginx.ingress.kubernetes.io/configuration-snippet: |
+            add_header Cache-Control "no-store";
+            add_header Pragma "no-cache";
+            add_header X-Frame-Options "SAMEORIGIN";
+            add_header X-XSS-Protection "1; mode=block";
+        hosts:
+          - host: &host "auth.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+              - *host
+    podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: OnRootMismatch
+    persistence:
+      config:
+        enabled: true
+        type: configMap
+        name: authelia
+        subPath: configuration.yml
+        mountPath: /config/configuration.yml
+        readOnly: false
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: *app
+    resources:
+      requests:
+        cpu: 5m
+        memory: 10Mi
+      limits:
+        memory: 100Mi
