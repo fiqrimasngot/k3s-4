@@ -37,7 +37,7 @@ spec:
       main:
         enabled: true
         type: LoadBalancer
-        externalIPs: ${SVC_REDIS_ADDR_V4}
+        externalIPs: ["${SVC_REDIS_ADDR_V4}"]
         ipFamilyPolicy: PreferDualStack
         ports:
           http:
