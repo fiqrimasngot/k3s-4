@@ -5,6 +5,7 @@ resources:
   - ./authelia.yaml
   - ./bitnami.yaml
   - ./bjw-s.yaml
+  - ./bjw-s-charts.yaml
   - ./cilium.yaml
   - ./coredns.yaml
   - ./csi-driver-nfs.yaml
