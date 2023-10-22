@@ -109,24 +109,24 @@ spec:
     persistence:
       config:
         enabled: true
-        existingClaim: local-path
-        # mountPath: /data
+        existingClaim: minio-pvc
+        mountPath: /data
     resources:
       requests:
         memory: 100Mi
         cpu: 100m
       limits:
         memory: 750Mi
-# ---
-# apiVersion: v1
-# kind: PersistentVolumeClaim
-# metadata:
-#   name: minio-pvc
-#   namespace: default
-# spec:
-#   accessModes:
-#     - ReadWriteMany
-#   storageClassName: longhorn
-#   resources:
-#     requests:
-#       storage: 1Mi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Mi
