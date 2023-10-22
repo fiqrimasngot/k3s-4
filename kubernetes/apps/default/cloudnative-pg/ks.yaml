@@ -23,10 +23,10 @@ metadata:
   name: cluster-apps-cloudnative-pg-cluster
   namespace: flux-system
 spec:
-  # dependsOn:
-  #   - name: cluster-apps-cloudnative-pg
+  dependsOn:
+    - name: cluster-apps-cloudnative-pg
   #   - name: cluster-apps-local-path-provisioner
-    # - name: cluster-apps-longhorn
+    - name: cluster-apps-longhorn
   path: ./kubernetes/apps/default/cloudnative-pg/cluster
   prune: true
   sourceRef:
