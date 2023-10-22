@@ -16,6 +16,6 @@ spec:
       targetPort: 5432
       protocol: TCP
   type: LoadBalancer
-  loadBalancerIP: ${${SVC_POSTGRES_ADDR_V4}}
+  loadBalancerIP: ${SVC_POSTGRES_ADDR_V4}
   externalIPs:
-    - ${${SVC_POSTGRES_ADDR_V4}}
+    - ${SVC_POSTGRES_ADDR_V4}
