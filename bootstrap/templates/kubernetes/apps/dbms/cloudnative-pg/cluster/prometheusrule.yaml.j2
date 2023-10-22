@@ -1,10 +1,10 @@
-#jinja2: trim_blocks: True
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.devbu.io/monitoring.coreos.com/prometheusrule_v1.json
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: cloudnative-pg-rules
-  namespace: dbms
+  namespace: database
   labels:
     prometheus: k8s
     role: alert-rules
@@ -53,7 +53,7 @@ spec:
             description: Archiving failed for {% raw %}{{ $labels.pod }}{% endraw %}
             summary: Checks the last time archiving failed. Will be -1 when it has not failed.
           expr: |-
-            cnpg_pg_stat_archiver_last_failed_time > cnpg_pg_stat_archiver_last_archived_time
+            delta(cnpg_pg_stat_archiver_last_failed_time[5m]) > 0
           for: 1m
           labels:
             severity: warning
@@ -64,14 +64,5 @@ spec:
           expr: |-
             cnpg_pg_stat_database_deadlocks > 10
           for: 1m
-          labels:
-            severity: warning
-        - alert: PGNoRecentBackups
-          annotations:
-            summmary: Checks for a recent backup
-            description: Job {% raw %}{{ $labels.job }}{% endraw %} has not completed in {% raw %}{{ humanizeDuration $value }}{% endraw %}.
-          # 36h
-          expr: |-
-            time() - max without (instance,pod) (cnpg_collector_last_available_backup_timestamp) > 129600
           labels:
             severity: warning

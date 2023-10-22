@@ -2,23 +2,22 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: &app postgres
-  namespace: dbms
-  labels:
-    app.kubernetes.io/name: *app
-    app.kubernetes.io/instance: *app
-  annotations:
-    external-dns.alpha.kubernetes.io/hostname: postgres.${SECRET_DOMAIN}
+    name: &app postgres-lb
+    namespace: database
+    annotations:
+        external-dns.alpha.kubernetes.io/hostname: postgres.${SECRET_DOMAIN}
+        io.cilium/lb-ipam-ips: ${SVC_POSTGRES_ADDR_V4}
+    labels:
+        app.kubernetes.io/name: *app
+        app.kubernetes.io/instance: *app
 spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Local
-  # externalIPs: ["${SVC_POSTGRES_ADDR_V4}", "${SVC_POSTGRES_ADDR_V6}"]
-  externalIPs: ["${SVC_POSTGRES_ADDR_V4}"]
-  ports:
-    - name: postgres
-      port: 5432
-      protocol: TCP
-      targetPort: 5432
-  selector:
-    cnpg.io/cluster: kochhaus-v15
-    role: primary
+    type: LoadBalancer
+    externalTrafficPolicy: Cluster
+    ports:
+        - name: postgres
+          port: 5432
+          protocol: TCP
+          targetPort: 5432
+    selector:
+        postgresql: postgres
+        role: primary
