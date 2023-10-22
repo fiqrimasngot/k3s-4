@@ -9,10 +9,10 @@ spec:
   prune: true
   sourceRef:
     kind: GitRepository
-    name: cluster
-  dependsOn:
-    - name: cluster-apps-redis
-    - name: cluster-apps-cloudnative-pg-cluster
+    name: home-kubernetes
+  # dependsOn:
+  #   - name: cluster-apps-redis
+  #   - name: cluster-apps-cloudnative-pg-cluster
   wait: true
   interval: 30m
   retryInterval: 1m
