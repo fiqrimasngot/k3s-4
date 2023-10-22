@@ -1,12 +1,12 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.devbu.io/helm.toolkit.fluxcd.io/helmrelease_v2beta1.json
+# yaml-language-server: $schema=https://kubernetes-schemas.minuette.horse/helm.toolkit.fluxcd.io/helmrelease_v2beta1.json
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: cloudnative-pg
-  namespace: dbms
+  namespace: default
 spec:
-  interval: 30m
+  interval: 15m
   chart:
     spec:
       chart: cloudnative-pg
@@ -15,19 +15,13 @@ spec:
         kind: HelmRepository
         name: cloudnative-pg
         namespace: flux-system
-  maxHistory: 2
   install:
+    createNamespace: true
     remediation:
-      retries: 3
+      retries: 5
   upgrade:
-    cleanupOnFail: true
     remediation:
-      retries: 3
-  uninstall:
-    keepHistory: false
-  # dependsOn:
-  #   - name: longhorn
-  #     namespace: longhorn-system
+      retries: 5
   values:
     crds:
       create: true

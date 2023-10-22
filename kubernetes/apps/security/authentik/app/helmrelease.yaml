@@ -36,9 +36,9 @@ spec:
       error_reporting:
         enabled: true
       postgresql:
-        host: postgres-rw.dbms.svc
+        host: postgres-v15-rw.default.svc
         name: authentik
-        user: fiqrim
+        user: authentik
         password: ${AUTHENTIK_DB_PASSWORD}
       redis:
         host: redis-master
