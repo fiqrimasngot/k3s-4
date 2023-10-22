@@ -5,30 +5,31 @@ metadata:
   name: longhorn
   namespace: longhorn-system
 spec:
-  interval: 5m
+  interval: 15m
   chart:
     spec:
-      # renovate: registryUrl=https://charts.longhorn.io
       chart: longhorn
-      version: 1.4.3
+      version: 1.5.1
       sourceRef:
         kind: HelmRepository
         name: longhorn
         namespace: flux-system
-      interval: 5m
+  install:
+    remediation:
+      retries: 5
+  upgrade:
+    remediation:
+      retries: 5
   values:
-    persistence:
-      defaultClassReplicaCount: 2
     defaultSettings:
-      defaultReplicaCount: 2
-      defaultLonghornStaticStorageClass: longhorn
+      # backupTarget: "nfs://${NAS0_IP}:/volume1/longhorn-backups"
+      defaultReplicaCount: 3
+    longhornUI:
+      replicas: 3
     ingress:
       enabled: true
-      ingressClassName: external
-      host: "longhorn.${SECRET_DOMAIN}"
+      ingressClassName: "external"
+      host: longhorn.${SECRET_DOMAIN}
       path: /
-      tls:
-        - hosts:
-            - *host
       annotations:
         external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
