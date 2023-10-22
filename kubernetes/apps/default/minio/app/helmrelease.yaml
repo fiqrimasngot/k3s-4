@@ -110,7 +110,7 @@ spec:
       config:
         enabled: true
         existingClaim: local-path
-        mountPath: /data
+        # mountPath: /data
     resources:
       requests:
         memory: 100Mi
