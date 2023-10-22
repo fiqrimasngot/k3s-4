@@ -38,7 +38,7 @@ spec:
       postgresql:
         host: postgres-rw.dbms.svc
         name: authentik
-        user: authentik
+        user: fiqrim
         password: ${AUTHENTIK_DB_PASSWORD}
       redis:
         host: redis-master
