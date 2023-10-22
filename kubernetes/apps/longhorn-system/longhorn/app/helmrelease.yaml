@@ -28,7 +28,7 @@ spec:
       replicas: 3
     ingress:
       enabled: true
-      ingressClassName: "internal"
+      ingressClassName: "external"
       host: longhorn.${SECRET_DOMAIN}
       path: /
       annotations:
