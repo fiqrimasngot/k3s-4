@@ -4,7 +4,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: postgres-v15
-  namespace: default
+  namespace: dbms
 spec:
   instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:15.4-16
