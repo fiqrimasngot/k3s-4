@@ -5,6 +5,8 @@ metadata:
   name: cluster-storage-minio
   namespace: flux-system
 spec:
+  dependsOn: 
+    - name: cluster-storage-longhorn
   path: ./kubernetes/apps/storage-system/minio/app
   prune: true
   sourceRef:
