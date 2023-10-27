@@ -85,11 +85,11 @@ spec:
         ingressClassName: external
         annotations:
           external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-          nginx.ingress.kubernetes.io/proxy-connect-timeout: "180"
-          nginx.ingress.kubernetes.io/proxy-body-size: 1024m
-          nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
-          nginx.ingress.kubernetes.io/configuration-snippet: |
-            chunked_transfer_encoding off;
+          # nginx.ingress.kubernetes.io/proxy-connect-timeout: "180"
+          # nginx.ingress.kubernetes.io/proxy-body-size: 1024m
+          # nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+          # nginx.ingress.kubernetes.io/configuration-snippet: |
+          #   chunked_transfer_encoding off;
           hajimari.io/enable: "false"
         hosts:
           - host: &api-host s3.${SECRET_DOMAIN}
