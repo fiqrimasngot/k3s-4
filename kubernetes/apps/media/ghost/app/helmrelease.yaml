@@ -49,7 +49,7 @@ spec:
           hajimari.io/info: "Blogging software"
           hajimari.io/icon: "image-multiple"
         hosts:
-          - host: journal.${SECRET_DOMAIN}
+          - host: &host journal.${SECRET_DOMAIN}
             paths:
               - path: "/"
                 pathType: "Prefix"
