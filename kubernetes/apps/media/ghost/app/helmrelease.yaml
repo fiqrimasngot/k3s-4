@@ -1,0 +1,116 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: ghost
+  namespace: media
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: app-template
+      version: 2.0.3
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s-charts
+        namespace: flux-system
+      interval: 15m
+  values:
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              repository: ghost
+              tag: 5.70.2
+            env:
+              TZ: ${TIMEZONE}
+              url: "http://journal.${SECRET_DOMAIN}"
+              database__client: mysql
+              database__connection__host: ghost-mariadb.media.svc.cluster.local
+              database__connection__user: ${MEDIA_GHOST_DB_USER}
+              database__connection__password: ${MEDIA_GHOST_DB_PASSWORD}
+              database__connection__database: ${MEDIA_GHOST_DB_DB}
+              NODE_ENV: production
+    service:
+      main:
+        ports:
+          http:
+            port: 2368
+    ingress:
+      main:
+        enabled: true
+        className: external
+        annotations:
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          # nginx.ingress.kubernetes.io/proxy-body-size: 2G
+          hajimari.io/enable: "true"
+          hajimari.io/appName: "Journal (Ghost)"
+          hajimari.io/info: "Blogging software"
+          hajimari.io/icon: "image-multiple"
+        hosts:
+          - host: journal.${SECRET_DOMAIN}
+            paths:
+              - path: "/"
+                pathType: "Prefix"
+        tls:
+          - hosts:
+              - *host
+    persistence:
+      content:
+        enabled: true
+        globalMounts:
+          - path: /var/lib/ghost/content
+        existingClaim: ghost-content-pvc
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: ghost-mariadb
+  namespace: media
+spec:
+  interval: 15m
+  chart:
+    spec:
+      chart: mariadb
+      version: 14.1.0
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami-charts
+        namespace: flux-system
+      interval: 15m
+  values:
+    auth:
+      # database__connection__host: ghost-mariadb
+      rootPassword: ${MEDIA_GHOST_DB_ROOT_PASSWORD}
+      username: ${MEDIA_GHOST_DB_USER}
+      password: ${MEDIA_GHOST_DB_PASSWORD}
+      database: ${MEDIA_GHOST_DB_DB}
+    persistence:
+      existingClaim: ghost-db-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ghost-content-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "longhorn"
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ghost-db-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "longhorn"
+  resources:
+    requests:
+      storage: 2Gi
