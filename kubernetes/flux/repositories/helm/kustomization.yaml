@@ -5,6 +5,7 @@ resources:
   - ./authelia.yaml
   - ./authentik.yaml
   - ./bitnami.yaml
+  - ./bitnami-charts.yaml
   - ./bjw-s.yaml
   - ./bjw-s-charts.yaml
   - ./cilium.yaml
