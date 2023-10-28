@@ -66,9 +66,9 @@ spec:
     ingress:
       main:
         enabled: true
-        ingressClassName: internal
+        ingressClassName: external
         annotations:
-          # external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
           hajimari.io/icon: mdi:pail
         hosts:
           - host: &console-host "{% raw %}{{.Release.Name }}{% endraw %}.${SECRET_DOMAIN}"
@@ -82,13 +82,13 @@ spec:
               - *console-host
       s3:
         enabled: true
-        ingressClassName: internal
+        ingressClassName: external
         annotations:
-          # external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-          nginx.ingress.kubernetes.io/proxy-connect-timeout: "180"
-          nginx.ingress.kubernetes.io/proxy-body-size: 1024m
-          nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
-          nginx.ingress.kubernetes.io/configuration-snippet: |
+          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+          # nginx.ingress.kubernetes.io/proxy-connect-timeout: "180"
+          # nginx.ingress.kubernetes.io/proxy-body-size: 1024m
+          # nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+          # nginx.ingress.kubernetes.io/configuration-snippet: |
             chunked_transfer_encoding off;
           hajimari.io/enable: "false"
         hosts:
