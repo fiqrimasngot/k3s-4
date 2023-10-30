@@ -32,7 +32,7 @@ spec:
       TZ: "${TIMEZONE}"
       url: "https://${SECRET_DOMAIN1}"
       database__client: mysql
-      database__connection__host: ghost-mariadb.media.svc.cluster.local
+      database__connection__host: ghost-mariadb-01.media.svc.cluster.local
       database__connection__user: ${MEDIA1_GHOST_DB_USER}
       database__connection__password: ${MEDIA1_GHOST_DB_PASSWORD}
       database__connection__database: ${MEDIA1_GHOST_DB_DB}
