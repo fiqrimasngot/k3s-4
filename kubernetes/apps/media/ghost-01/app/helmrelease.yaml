@@ -34,11 +34,11 @@ spec:
               database__connection__password: ${MEDIA1_GHOST_DB_PASSWORD}
               database__connection__database: ${MEDIA1_GHOST_DB_DB}
               NODE_ENV: production
-    service:
-      main:
-        ports:
-          http:
-            port: 2368
+    # service:
+    #   main:
+    #     ports:
+    #       http:
+    #         port: 2368
     ingress:
       main:
         enabled: true
