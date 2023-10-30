@@ -5,6 +5,8 @@ metadata:
   name: ghost-01
   namespace: media
 spec:
+  dependsOn:
+    - name: ghost-mariadb-01
   chart:
     spec:
       # renovate: registryUrl=https://k8s-at-home.com/charts/
