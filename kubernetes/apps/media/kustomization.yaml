@@ -5,7 +5,7 @@ resources:
   # Pre Flux-Kustomizations
   - ./namespace.yaml
   # Flux-Kustomizations
-  # - ./ghost-01/ks.yaml
+  - ./ghost-01/ks.yaml
   # - ./ghost-02/ks.yaml
   # - ./pgadmin/ks.yaml
   # - ./postgres-backup/ks.yaml
