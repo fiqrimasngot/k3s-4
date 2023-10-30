@@ -2,7 +2,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: ghost
+  name: ghost-01
   namespace: media
 spec:
   chart:
@@ -64,7 +64,7 @@ spec:
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: ghost-mariadb
+  name: ghost-mariadb-01
   namespace: media
 spec:
   interval: 15m
