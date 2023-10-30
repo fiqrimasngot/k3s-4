@@ -57,7 +57,7 @@ spec:
     persistence:
       content:
         enabled: true
-        existingClaim: ghost-v1
+        existingClaim: ghost-v2
     mariadb:
       enabled: false
 ---
