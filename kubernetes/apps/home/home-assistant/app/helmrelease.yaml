@@ -25,7 +25,7 @@ spec:
         image: ghcr.io/onedr0p/postgres-init:14.9@sha256:170970a909f892149cbf99be8d86c26f0090bc7d2fbd1c34dd770b4bf7e08458
         env:
           - name: INIT_POSTGRES_HOST
-            value: postgres.core.svc.cluster.local
+            value: postgres.database.svc.cluster.local
           - name: INIT_POSTGRES_SUPER_USER
             value: postgres
           - name: INIT_POSTGRES_SUPER_PASS
