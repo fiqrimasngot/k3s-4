@@ -1,40 +1,40 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: home-assistant
+  name: &app home-assistant
   namespace: home
 spec:
-  interval: 15m
   chart:
     spec:
       chart: app-template
       version: 1.5.1
-      interval: 15m
+      interval: 10m0s
       sourceRef:
         kind: HelmRepository
         name: bjw-s-charts
         namespace: flux-system
-  install:
-    remediation:
-      retries: 5
-  upgrade:
-    remediation:
-      retries: 5
+  interval: 10m0s
   values:
     image:
       repository: ghcr.io/home-assistant/home-assistant
-      tag: 2023.10.5
-
-    dnsConfig:
-      options:
-        - name: ndots
-          value: "1"
-
-    hostNetwork: true
-
-    dnsPolicy: "ClusterFirstWithHostNet"
+      tag: 2023.10.5@sha256:3b2810093b118a77c87f3639e51930ffb0f10e8af679ba8582843e9bbfdd5fa5
 
     initContainers:
+      init-db:
+        image: ghcr.io/onedr0p/postgres-init:14.9@sha256:170970a909f892149cbf99be8d86c26f0090bc7d2fbd1c34dd770b4bf7e08458
+        env:
+          - name: INIT_POSTGRES_HOST
+            value: postgres.database.svc.cluster.local
+          - name: INIT_POSTGRES_SUPER_USER
+            value: postgres
+          - name: INIT_POSTGRES_SUPER_PASS
+            value: ${POSTGRES_SUPER_PASS}
+          - name: INIT_POSTGRES_USER
+            value: postgres
+          - name: INIT_POSTGRES_PASS
+            value: ${POSTGRES_SUPER_PASS}
+          - name: INIT_POSTGRES_DBNAME
+            value: *app
       install-hacs:
         image: busybox:1.36.1@sha256:3fbc632167424a6d997e74f52b878d7cc478225cffac6bc977eedfe51c7f4e79
         command:
@@ -44,7 +44,7 @@ spec:
           - |
             # renovate: github-release depName=hacs/integration
             HACS_VERSION="1.33.0"
-            mkdir -p /config/custom_components/hacs
+            mkdir -p /config/custom_components
             rm -rf /config/custom_components/hacs
             busybox wget -qO- "https://github.com/hacs/integration/releases/download/$${HACS_VERSION}/hacs.zip"  | busybox unzip -d /config/custom_components/hacs -
         volumeMounts:
@@ -63,6 +63,13 @@ spec:
           - name: configfiles
             mountPath: /configfiles
 
+    hostNetwork: true
+    dnsPolicy: "ClusterFirstWithHostNet"
+    dnsConfig:
+      options:
+        - name: ndots
+          value: "1"
+
     service:
       main:
         ports:
@@ -74,21 +81,28 @@ spec:
         enabled: true
         ingressClassName: "internal"
         annotations:
-          # cert-manager.io/cluster-issuer: letsencrypt
-          hajimari.io/enable: "true"
-          hajimari.io/icon: home-assistant
           external-dns.alpha.kubernetes.io/target: "${SECRET_DOMAIN}"
+          # cert-manager.io/cluster-issuer: letsencrypt
+          # gethomepage.dev/enabled: "true"
+          # gethomepage.dev/name: Home Assistant
+          # gethomepage.dev/description: Open source home automation
+          # gethomepage.dev/group: Applications
+          # gethomepage.dev/icon: home-assistant.png
         hosts:
-          - host: &home-host home.${SECRET_DOMAIN}
+          - host: &hass-host "ha.${SECRET_DOMAIN}"
             paths:
               - path: /
         tls:
           - hosts:
-              - *home-host
+              - *hass-host
+
+    # podAnnotations:
+    #   configmap.reloader.stakater.com/reload: home-assistant-config
 
     persistence:
       config:
         enabled: true
+        existingClaim: home-assistant-config
       configfiles:
         enabled: true
         type: configMap
@@ -101,10 +115,16 @@ spec:
         enabled: false
       startup:
         enabled: false
-
-    resources:
-      requests:
-        cpu: 126m
-        memory: 411M
-      limits:
-        memory: 4417M
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home-assistant-config
+  namespace: home
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: longhorn        

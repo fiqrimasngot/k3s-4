@@ -6,8 +6,8 @@ resources:
   - ./helmrelease.yaml
 configMapGenerator:
   - name: home-assistant-config
-    files: 
-      - ./configuration.yaml
+    namespace: home
+    files:
+      - ./config/configuration.yaml
 generatorOptions:
   disableNameSuffixHash: true
-namespace: home
