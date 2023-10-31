@@ -4,3 +4,10 @@ kind: Kustomization
 resources:
   # - ./secret.sops.yaml
   - ./helmrelease.yaml
+configMapGenerator:
+  - name: home-assistant-config
+    files: 
+      - ./configuration.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+namespace: home
