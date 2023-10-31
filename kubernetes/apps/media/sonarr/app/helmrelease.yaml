@@ -67,3 +67,16 @@ spec:
         enabled: true
         mountPath: /tv-shows
         existingClaim: tv-shows
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tv-shows
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 2Gi  
