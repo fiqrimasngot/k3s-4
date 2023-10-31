@@ -72,12 +72,12 @@ spec:
 
       ## Specify the command that runs in the git-sync container to pull in configuration.                                                        
       # command: []
-    syncPath: /custom_components
+      syncPath: /custom_components
 
-      components:
-      - name: petkit
-        repo: "https://github.com/RobertD502/home-assistant-petkit"
-        componentPath: home-assistant-petkit/custom_components/petkit
+        components:
+        - name: petkit
+          repo: "https://github.com/RobertD502/home-assistant-petkit"
+          componentPath: home-assistant-petkit/custom_components/petkit
  
     mariadb:
       enabled: false
