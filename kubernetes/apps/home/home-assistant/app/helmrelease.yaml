@@ -1,177 +1,110 @@
----
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: home-assistant
   namespace: home
 spec:
-  releaseName: home-assistant
-  interval: 5m
+  interval: 15m
   chart:
     spec:
-      # renovate: registryUrl=https://k8s-at-home.com/charts/
-      chart: home-assistant
-      version: 13.1.2
+      chart: app-template
+      version: 1.5.1
+      interval: 15m
       sourceRef:
         kind: HelmRepository
-        name: k8s-at-home-charts
-        namespace: flux-system
-      interval: 5m
+        name: bjw-s-charts
+        namespace: home
+  install:
+    remediation:
+      retries: 5
+  upgrade:
+    remediation:
+      retries: 5
   values:
-    probes:
-      liveness:
-        enabled: false
-      readiness:
-        enabled: false
-    imagePullSecrets:
-    - name: regcred
     image:
-      repository: homeassistant/home-assistant
-      tag: 2022.4.7
-    persistence:
-      config:
-        enabled: true
-        existingClaim: homeassistant-pvc
-    extraEnv:
-      TZ: "${TIMEZONE}"
-    # envFrom:
-    # - secretRef:
-    #     name: home-assistant-secrets
+      repository: ghcr.io/home-assistant/home-assistant
+      tag: 2023.10.5
+
+    dnsConfig:
+      options:
+        - name: ndots
+          value: "1"
+
+    hostNetwork: true
+
+    dnsPolicy: "ClusterFirstWithHostNet"
+
+    initContainers:
+      install-hacs:
+        image: busybox:1.36.1@sha256:3fbc632167424a6d997e74f52b878d7cc478225cffac6bc977eedfe51c7f4e79
+        command:
+          - "/bin/sh"
+          - -c
+        args:
+          - |
+            # renovate: github-release depName=hacs/integration
+            HACS_VERSION="1.33.0"
+            mkdir -p /config/custom_components/hacs
+            rm -rf /config/custom_components/hacs
+            busybox wget -qO- "https://github.com/hacs/integration/releases/download/$${HACS_VERSION}/hacs.zip"  | busybox unzip -d /config/custom_components/hacs -
+        volumeMounts:
+          - name: config
+            mountPath: /config
+      copy-config:
+        image: busybox:latest@sha256:3fbc632167424a6d997e74f52b878d7cc478225cffac6bc977eedfe51c7f4e79
+        command:
+          - "/bin/sh"
+          - -c
+        args:
+          - cp /configfiles/* /config/
+        volumeMounts:
+          - name: config
+            mountPath: /config
+          - name: configfiles
+            mountPath: /configfiles
+
+    service:
+      main:
+        ports:
+          http:
+            port: 8123
+
     ingress:
       main:
         enabled: true
         ingressClassName: "internal"
         annotations:
-          service.beta.kubernetes.io/do-loadbalancer-enable-proxy-protocol: "true"
-          nginx.ingress.kubernetes.io/cors-allow-headers: "X-Forwarded-For, X-Real-IP, X-Frame-Options, X-Content-Type-Options, X-Forwarded-Proto"
-
+          # cert-manager.io/cluster-issuer: letsencrypt
+          hajimari.io/enable: "true"
+          hajimari.io/icon: home-assistant
+          # external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
         hosts:
-        - host: &host "ha.${SECRET_DOMAIN}"
-          paths:
-          - path: /
-            pathType: Prefix
-        tls:
-        - hosts:
-          - *host
-    hostNetwork: true
-    dnsPolicy: ClusterFirstWithHostNet
-    initContainers:
-      - name: "custom-components-sync-causticlab"
-        image: "causticlab/hass-configurator-docker:0.3.5-x86_64"
-        imagePullPolicy: IfNotPresent
-
-        volumeMounts:
-        - mountPath: /custom_components
-          name: custom-components
-
-    service:
-      main:
-        type: LoadBalancer
-        loadBalancerIP: "${HOME_ASSISTANT_ADDRESS}"
-        externalIPs:
-        - "${HOME_ASSISTANT_ADDRESS}"
-        externalTrafficPolicy: Local
-    mariadb:
-      enabled: false
-    postgresql:
-      enabled: true
-      # diagnosticMode:
-      #   enabled: true
-      # image:
-      #   tag: 12.9.0
-      existingSecret: home-assistant-postgresql-secret
-      persistence:
-        enabled: true
-        existingClaim: homeassistant-postgres-pvc
-    addons:
-      customcomponents:
-        enabled: true
-
-        image:
-          repository: causticlab/hass-configurator-docker
-          tag: 0.3.5-x86_64
-          pullPolicy: IfNotPresent
-
-        ## Specify the command that runs in the git-sync container to pull in configuration.                                                        
-        # command: []
-        syncPath: /custom_components
-
-          components:
-          - name: petkit
-            repo: "https://github.com/RobertD502/home-assistant-petkit"
-            componentPath: home-assistant-petkit/custom_components/petkit
-  
-
-      codeserver:
-        imagePullSecrets:
-        - name: regcred
-        enabled: true
-        image:
-          repository: codercom/code-server
-          tag: 4.3.0
-        workingDir: "/config"
-        #TODO: Eventually add a git secret here
-        # git:
-        #   deployKeySecret: home-assistant-code-server-secret
-        env:
-          password: ${SECRET_CODESERVER_PASSWORD}
-        args:
-        - --auth
-        - "none"
-        - --user-data-dir
-        - "/config/.vscode"
-        - --extensions-dir
-        - "/config/.vscode"
-        ingress:
-          enabled: true
-          ingressClassName: "internal"
-          annotations:
-            # kubernetes.io/ingress.class: "nginx-internal"
-            # nginx.ingress.kubernetes.io/auth-url: "https://auth.${SECRET_DOMAIN}/oauth2/auth"
-            # nginx.ingress.kubernetes.io/auth-signin: "https://auth.${SECRET_DOMAIN}/oauth2/start"
-          hosts:
-          - host: &host1 "ha-vscode.${SECRET_DOMAIN}"
+          - host: &home-host home.${SECRET_DOMAIN}
             paths:
-            - path: /
-              pathType: Prefix
-          tls:
+              - path: /
+        tls:
           - hosts:
-            - *host
-        volumeMounts:
-        - name: config
-          mountPath: /config
-    # podAnnotations:
-    #   secret.reloader.stakater.com/reload: home-assistant-secrets
-    # affinity:
-    #   nodeAffinity:
-    #     requiredDuringSchedulingIgnoredDuringExecution:
-    #       nodeSelectorTerms:
-    #       - matchExpressions:
-    #         - {key: "feature.node.kubernetes.io/custom-tplink-bluetooth", operator: In, values: ["true"]}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: homeassistant-pvc
-  namespace: home
-spec:
-  accessModes:
-  - ReadWriteMany
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 1Mi
+              - *home-host
 
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: homeassistant-postgres-pvc
-  namespace: home
-spec:
-  accessModes:
-  - ReadWriteMany
-  storageClassName: longhorn
-  resources:
-    requests:
-      storage: 1Mi
+    persistence:
+      config:
+        enabled: true
+      configfiles:
+        enabled: true
+        type: configMap
+        name: home-assistant-config
+
+    probes:
+      liveness:
+        enabled: false
+      readiness:
+        enabled: false
+      startup:
+        enabled: false
+
+    resources:
+      requests:
+        cpu: 126m
+        memory: 411M
+      limits:
+        memory: 4417M
