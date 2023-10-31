@@ -1,5 +1,5 @@
 default_config:
-automation: !include automations.yaml
+# automation: !include automations.yaml
 recorder:
   db_url: postgresql://postgres:${POSTGRES_SUPER_PASS}@postgres.database.svc.cluster.local/home-assistant?sslmode=disable
 homeassistant:
