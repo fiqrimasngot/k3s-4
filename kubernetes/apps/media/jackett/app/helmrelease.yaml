@@ -22,8 +22,8 @@ spec:
       PUID: "8675309"
       PGID: "8675309"
     ingress:
-      ingressClassName: internal
       enabled: true
+      ingressClassName: internal
       hosts:
       - host: &host jackett.${SECRET_DOMAIN}
         paths:
