@@ -1,0 +1,102 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: home-assistant
+  namespace: home
+spec:
+  interval: 10m
+  chart:
+    spec:
+      chart: home-assistant
+      version: 13.4.2
+      sourceRef:
+        kind: HelmRepository
+        name: k8s-at-home-charts
+        namespace: flux-system
+      interval: 10m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+      # cleanupOnFail: true
+  rollback:
+    timeout: 10m
+    recreate: true
+    # cleanupOnFail: true
+  # dependsOn:
+  #   - name: nfs-subdir-external-provisioner
+  #     namespace: storage
+  #   - name: cert-manager
+  #     namespace: networking
+  #   - name: ingress-nginx
+  #     namespace: networking
+  values:
+    image:
+      repository: homeassistant/home-assistant
+      tag: "2023.5"
+    hostNetwork: true
+    dnsPolicy: ClusterFirstWithHostNet
+    persistence:
+      config:
+        enabled: true
+        storageClass: longhorn
+    podAnnotations:
+      backup.velero.io/backup-volumes: config
+    ingress:
+      main:
+        enabled: true
+        ingressClassName: internal
+        annotations:
+          # cert-manager.io/cluster-issuer: "letsencrypt-production"
+          # external-dns.alpha.kubernetes.io/target: "ingress.${SECRET_DOMAIN}"
+          # external-dns/is-public: "true"
+          hajimari.io/enable: "true"
+          hajimari.io/icon: "home"
+          # hajimari.io/group: External
+        hosts:
+          - host: &host "home.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+              - *host
+    addons:
+      codeserver:
+        enabled: true
+        image:
+          repository: ghcr.io/coder/code-server
+          tag: 4.13.0
+        env:
+          TZ: "${TIMEZONE}"
+        workingDir: "/config"
+        args:
+          - --auth
+          - none
+          - --user-data-dir
+          - "/config/.vscode"
+        volumeMounts:
+          - name: config
+            mountPath: /config
+        ingress:
+          enabled: true
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /$2
+            hajimari.io/enable: "true"
+            hajimari.io/icon: "code-braces"
+            hajimari.io/url: "https://home.${SECRET_DOMAIN}/codeserver/"
+            # hajimari.io/group: External
+          ingressClassName: internal
+          hosts:
+            - host: "home.${SECRET_DOMAIN}"
+              paths:
+                - path: /codeserver(/|$)(.*)
+                  pathType: Prefix
+          tls:
+            - hosts:
+                - "home.${SECRET_DOMAIN}"
+              secretName: home-tls
