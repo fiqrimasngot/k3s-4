@@ -5,97 +5,144 @@ metadata:
   name: home-assistant
   namespace: home
 spec:
-  interval: 10m
+  releaseName: home-assistant
+  interval: 5m
   chart:
     spec:
+      # renovate: registryUrl=https://k8s-at-home.com/charts/
       chart: home-assistant
-      version: 13.4.2
+      version: 13.1.2
       sourceRef:
         kind: HelmRepository
         name: k8s-at-home-charts
         namespace: flux-system
-      interval: 10m
-  install:
-    remediation:
-      retries: 3
-  upgrade:
-    remediation:
-      retries: 3
-      remediateLastFailure: true
-      # cleanupOnFail: true
-  rollback:
-    timeout: 10m
-    recreate: true
-    # cleanupOnFail: true
-  # dependsOn:
-  #   - name: nfs-subdir-external-provisioner
-  #     namespace: storage
-  #   - name: cert-manager
-  #     namespace: networking
-  #   - name: ingress-nginx
-  #     namespace: networking
+      interval: 5m
   values:
+    probes:
+      liveness:
+        enabled: false
+      readiness:
+        enabled: false
+    imagePullSecrets:
+    - name: regcred
     image:
       repository: homeassistant/home-assistant
-      tag: "2023.5"
-    hostNetwork: true
-    dnsPolicy: ClusterFirstWithHostNet
+      tag: 2022.4.7
     persistence:
       config:
         enabled: true
-        storageClass: longhorn
-    # podAnnotations:
-    #   backup.velero.io/backup-volumes: config
+        existingClaim: homeassistant-pvc
+    extraEnv:
+      TZ: "${TIMEZONE}"
+    # envFrom:
+    # - secretRef:
+    #     name: home-assistant-secrets
     ingress:
       main:
         enabled: true
-        ingressClassName: internal
+        ingressClassName: "internal"
         annotations:
-          # cert-manager.io/cluster-issuer: "letsencrypt-production"
-          # external-dns.alpha.kubernetes.io/target: "ingress.${SECRET_DOMAIN}"
-          # external-dns/is-public: "true"
-          hajimari.io/enable: "true"
-          hajimari.io/icon: "home"
-          # hajimari.io/group: External
+          # kubernetes.io/ingress.class: "nginx-external"
         hosts:
-          - host: &host "home.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
+        - host: &host "ha.${SECRET_DOMAIN}"
+          paths:
+          - path: /
+            pathType: Prefix
         tls:
-          - hosts:
-              - *host
+        - hosts:
+          - *host
+    hostNetwork: true
+    dnsPolicy: ClusterFirstWithHostNet
+    service:
+      main:
+        type: LoadBalancer
+        loadBalancerIP: "${HOME_ASSISTANT_ADDRESS}"
+        externalIPs:
+        - "${HOME_ASSISTANT_ADDRESS}"
+        externalTrafficPolicy: Local
+    mariadb:
+      enabled: false
+    postgresql:
+      enabled: true
+      # diagnosticMode:
+      #   enabled: true
+      # image:
+      #   tag: 12.9.0
+      existingSecret: home-assistant-postgresql-secret
+      persistence:
+        enabled: true
+        existingClaim: homeassistant-postgres-pvc
     addons:
       codeserver:
+        imagePullSecrets:
+        - name: regcred
         enabled: true
         image:
-          repository: ghcr.io/coder/code-server
-          tag: 4.13.0
-        env:
-          TZ: "${TIMEZONE}"
+          repository: codercom/code-server
+          tag: 4.3.0
         workingDir: "/config"
+        #TODO: Eventually add a git secret here
+        # git:
+        #   deployKeySecret: home-assistant-code-server-secret
+        env:
+          password: ${SECRET_CODESERVER_PASSWORD}
         args:
-          - --auth
-          - none
-          - --user-data-dir
-          - "/config/.vscode"
-        volumeMounts:
-          - name: config
-            mountPath: /config
+        - --auth
+        - "none"
+        - --user-data-dir
+        - "/config/.vscode"
+        - --extensions-dir
+        - "/config/.vscode"
         ingress:
           enabled: true
+          ingressClassName: "internal"
           annotations:
-            nginx.ingress.kubernetes.io/rewrite-target: /$2
-            hajimari.io/enable: "true"
-            hajimari.io/icon: "code-braces"
-            hajimari.io/url: "https://home.${SECRET_DOMAIN}/codeserver/"
-            # hajimari.io/group: External
-          ingressClassName: internal
+            # kubernetes.io/ingress.class: "nginx-internal"
+            # nginx.ingress.kubernetes.io/auth-url: "https://auth.${SECRET_DOMAIN}/oauth2/auth"
+            # nginx.ingress.kubernetes.io/auth-signin: "https://auth.${SECRET_DOMAIN}/oauth2/start"
           hosts:
-            - host: &host1 "home.${SECRET_DOMAIN}"
-              paths:
-                - path: /codeserver(/|$)(.*)
-                  pathType: Prefix
+          - host: &host1 "ha-vscode.${SECRET_DOMAIN}"
+            paths:
+            - path: /
+              pathType: Prefix
           tls:
-            - hosts:
-                - *host1
+          - hosts:
+            - *host
+        volumeMounts:
+        - name: config
+          mountPath: /config
+    # podAnnotations:
+    #   secret.reloader.stakater.com/reload: home-assistant-secrets
+    # affinity:
+    #   nodeAffinity:
+    #     requiredDuringSchedulingIgnoredDuringExecution:
+    #       nodeSelectorTerms:
+    #       - matchExpressions:
+    #         - {key: "feature.node.kubernetes.io/custom-tplink-bluetooth", operator: In, values: ["true"]}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: homeassistant-pvc
+  namespace: home
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Mi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: homeassistant-postgres-pvc
+  namespace: home
+spec:
+  accessModes:
+  - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Mi
