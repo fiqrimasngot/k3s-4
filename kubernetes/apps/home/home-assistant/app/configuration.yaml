@@ -1,16 +1,9 @@
-# Loads default set of integrations. Do not remove.
 default_config:
-
-# Text to speech
-tts:
-  - platform: google_translate
-
-# automation: !include automations.yaml
-# script: !include scripts.yaml
-# scene: !include scenes.yaml
+automation: !include automations.yaml
+recorder:
+  db_url: postgresql://postgres:${POSTGRES_SUPER_PASS}@postgres.database.svc.cluster.local/home-assistant?sslmode=disable
 homeassistant:
-  allowlist_external_urls:
-    - https://ha.akudanlasagna.online
+  external_url: https://ha.${SECRET_DOMAAIN}
 http:
   use_x_forwarded_for: true
   trusted_proxies:

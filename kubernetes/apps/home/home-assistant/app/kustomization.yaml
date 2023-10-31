@@ -8,6 +8,6 @@ configMapGenerator:
   - name: home-assistant-config
     namespace: home
     files:
-      - ./config/configuration.yaml
+      - ./configuration.yaml
 generatorOptions:
   disableNameSuffixHash: true
