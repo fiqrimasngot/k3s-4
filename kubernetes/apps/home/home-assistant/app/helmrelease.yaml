@@ -55,6 +55,15 @@ spec:
           - *host
     hostNetwork: true
     dnsPolicy: ClusterFirstWithHostNet
+    initContainers:
+      - name: "custom-components-sync-causticlab"
+        image: "causticlab/hass-configurator-docker:0.3.5-x86_64"
+        imagePullPolicy: IfNotPresent
+
+        volumeMounts:
+        - mountPath: /custom_components
+          name: custom-components
+
     service:
       main:
         type: LoadBalancer
