@@ -44,8 +44,8 @@ spec:
       config:
         enabled: true
         storageClass: longhorn
-    podAnnotations:
-      backup.velero.io/backup-volumes: config
+    # podAnnotations:
+    #   backup.velero.io/backup-volumes: config
     ingress:
       main:
         enabled: true
