@@ -92,11 +92,10 @@ spec:
             # hajimari.io/group: External
           ingressClassName: internal
           hosts:
-            - host: "home.${SECRET_DOMAIN}"
+            - host: &host1 "home.${SECRET_DOMAIN}"
               paths:
                 - path: /codeserver(/|$)(.*)
                   pathType: Prefix
           tls:
             - hosts:
-                - "home.${SECRET_DOMAIN}"
-              secretName: home-tls
+                - *host1
