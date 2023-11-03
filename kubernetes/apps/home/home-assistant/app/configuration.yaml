@@ -1,9 +1,10 @@
 default_config:
-# automation: !include automations.yaml
+automation: !include automations.yaml
 recorder:
-  db_url: postgresql://postgres:${POSTGRES_SUPER_PASS}@postgres.database.svc.cluster.local/home-assistant?sslmode=disable
+  db_url: postgresql://postgres:43098d77d215ee6b946b0edebb7396a7@postgres.database.svc.cluster.local/home-assistant?sslmode=disable
 homeassistant:
-  external_url: https://ha.${SECRET_DOMAAIN}
+  # customize: !include customize.yaml
+  external_url: https://ha.akudanlasagna.online
 http:
   use_x_forwarded_for: true
   trusted_proxies:

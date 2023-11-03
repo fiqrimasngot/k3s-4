@@ -9,5 +9,13 @@ configMapGenerator:
     namespace: home
     files:
       - ./configuration.yaml
+  # - name: home-assistant-automation
+  #   namespace: home
+  #   files:
+  #     - ./automations.yaml
+  # - name: home-assistant-customize
+  #   namespace: home
+  #   files:
+  #     - ./customizes.yaml
 generatorOptions:
   disableNameSuffixHash: true
