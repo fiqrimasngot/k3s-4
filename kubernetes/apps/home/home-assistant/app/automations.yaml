@@ -1,0 +1,39 @@
+- id: '1698795388027'
+  alias: Zone Notification
+  description: ''
+  use_blueprint:
+    path: homeassistant/notify_leaving_zone.yaml
+    input:
+      person_entity: person.fiqrim
+      notify_device: 1012678ad73175400d7bfdecb117a76a
+      zone_entity: zone.home
+- id: '1698887021576'
+  alias: Clean Litter
+  description: ''
+  trigger:
+  - platform: event
+    event_type: ios.action_fired
+    event_data:
+      actionName: Clean Litter
+  condition: []
+  action:
+  - device_id: 41c7aece9aef5640c7bf6d5f8f001d5f
+    domain: button
+    entity_id: af4691cebb8a02a26e1ca381ce5859df
+    type: press
+  mode: single
+- id: '1698905814439'
+  alias: Maintenance Mode
+  description: ''
+  trigger:
+  - platform: event
+    event_type: ios.action_fired
+    event_data:
+      actionName: Maintenance Mode
+  condition: []
+  action:
+  - device_id: 41c7aece9aef5640c7bf6d5f8f001d5f
+    domain: button
+    entity_id: 1269dec6025774b0ab2518a005803928
+    type: press
+  mode: single

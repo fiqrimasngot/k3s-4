@@ -1,0 +1,11 @@
+camera.chuangmi_046a01_8fc4_camera_control:
+  motion_stream_slice: '-1'
+  sub_motion_stream: 'true'
+  video_attribute: '1'
+  keep_streaming: true
+
+camera.isa_hlc7_86f4_camera_control:
+  motion_stream_slice: '-1'
+  sub_motion_stream: 'true'
+  video_attribute: '1'
+  keep_streaming: true
