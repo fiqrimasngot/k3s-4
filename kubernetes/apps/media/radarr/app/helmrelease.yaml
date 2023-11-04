@@ -68,12 +68,12 @@ spec:
       media:
         enabled: true
         mountPath: /movies
-        existingClaim: movies
+        existingClaim: movies-nfs
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: movies
+  name: movies-nfs
 spec:
   accessModes:
     - ReadWriteMany
@@ -82,14 +82,14 @@ spec:
   nfs:
     path: "/mnt/lab-pool/k3s-nfs/Movies"
     server: "10.32.1.5"
-  storageClassName: movies
+  storageClassName: movies-nfs
   volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: movies
+  name: movies-nfs
   namespace: media
 spec:
   accessModes:
@@ -97,5 +97,5 @@ spec:
   resources:
     requests:
       storage: 100Gi
-  storageClassName: movies
+  storageClassName: movies-nfs
   volumeMode: Filesystem
