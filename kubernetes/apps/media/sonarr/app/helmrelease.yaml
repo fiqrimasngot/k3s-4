@@ -82,14 +82,7 @@ spec:
     server: "10.32.1.5"
   storageClassName: tv-shows
   volumeMode: Filesystem
-  persistentVolumeReclaimPolicy: Retain
-  mountOptions:
-    - nfsvers=3
-    - tcp
-    - intr
-    - hard
-    - noatime
-    - nodiratime    
+  persistentVolumeReclaimPolicy: Retain   
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

@@ -87,9 +87,6 @@ spec:
   storageClassName: movies
   volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
-  mountOptions:
-    - nfsvers=3
-    - hard
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
