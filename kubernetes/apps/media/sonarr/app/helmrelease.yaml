@@ -69,7 +69,7 @@ spec:
         server: "10.32.1.5"
         path: /mnt/lab-pool/k3s-nfs/TV-Shows
         globalMounts:
-          - path: /tv-shows   
+          - path: /media   
       downloads:
         enabled: true
         type: nfs
