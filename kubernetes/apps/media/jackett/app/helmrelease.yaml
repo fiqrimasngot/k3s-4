@@ -58,21 +58,15 @@ spec:
     persistence:
       config:
         enabled: true
-        storageClass: nfs-kube
-      torrentblackhole:
-        enabled: true
-        type: custom
-        volumeSpec:
-          nfs:
-            server: "10.32.1.5"
-            path: /mnt/lab-pool/k3s-nfs/Media
-        mountPath: /media
-    podAnnotations:
-      backup.velero.io/backup-volumes: config
-      pre.hook.backup.velero.io/container: fsfreeze
-      pre.hook.backup.velero.io/command: '["/sbin/fsfreeze", "--freeze", "/config"]'
-      post.hook.backup.velero.io/container: fsfreeze
-      post.hook.backup.velero.io/command: '["/sbin/fsfreeze", "--unfreeze", "/config"]'
+        storageClass: "nfs-kube"
+        accessMode: ReadWriteOnce
+        size: "1Gi"
+    # podAnnotations:
+    #   backup.velero.io/backup-volumes: config
+    #   pre.hook.backup.velero.io/container: fsfreeze
+    #   pre.hook.backup.velero.io/command: '["/sbin/fsfreeze", "--freeze", "/config"]'
+    #   post.hook.backup.velero.io/container: fsfreeze
+    #   post.hook.backup.velero.io/command: '["/sbin/fsfreeze", "--unfreeze", "/config"]'
     nodeSelector: 
       worker: yes
     resources:
@@ -95,16 +89,3 @@ spec:
             mountPath: /config
         securityContext:
           privileged: true
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: jackett-config-v1
-  namespace: media
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Gi
-  storageClassName: longhorn
