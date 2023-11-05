@@ -80,11 +80,14 @@ spec:
         enabled: true
         size: 20Gi
 
-      # downloads:
-      #   enabled: true
-      #   type: pvc
-      #   existingClaim: media-pv-pvc-claim
-      #   mountPath: /download
+      downloads:
+        enabled: true
+        type: custom
+        volumeSpec:
+          nfs:
+            path: /mnt/lab-pool/k3s-nfs/Media
+            server: 10.32.1.5
+        mountPath: /download
 
       movies:
         enabled: true
