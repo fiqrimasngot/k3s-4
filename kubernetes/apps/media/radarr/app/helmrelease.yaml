@@ -1,4 +1,3 @@
-# yaml-language-server: $schema=https://kubernetes-schemas.devbu.io/helm.toolkit.fluxcd.io/helmrelease_v2beta1.json
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
@@ -6,105 +5,66 @@ metadata:
   name: radarr
   namespace: media
 spec:
-  interval: 30m
+  interval: 5m
   chart:
     spec:
-      chart: app-template
-      version: 1.5.1
+      # renovate: registryUrl=https://k8s-at-home.com/charts/
+      chart: radarr
+      version: 16.3.2
       sourceRef:
         kind: HelmRepository
-        name: bjw-s-charts
+        name: k8s-at-home-charts
         namespace: flux-system
-  maxHistory: 2
-  install:
-    createNamespace: true
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
-  uninstall:
-    keepHistory: false
-
+      interval: 5m
   values:
-    controller:
-      type: statefulset
-
     image:
-      repository: ghcr.io/onedr0p/radarr-develop
-      tag: 5.1.2.8207@sha256:7e026aae3fa4ac9d4066a0533fdbfaa35a0ccdc41033bc4f2460aa9401ecfb46
-
-    env:
-      TZ: ${TIMEZONE}
-      # RADARR__AUTHENTICATION_METHOD: External
-      # RADARR__AUTHENTICATION_REQUIRED: DisabledForLocalAddresses
-      # RADARR__INSTANCE_NAME: Radarr
-      # RADARR__PORT: &port 7878
-      # RADARR__APPLICATION_URL: "https://radarr.${SECRET_DOMAIN}"
-      # RADARR__LOG_LEVEL: info
-
-    service:
-      main:
-        ports:
-          http:
-            port: &port 7878
-
-    probes:
-      liveness: &probes
-        enabled: true
-        custom: true
-        spec:
-          httpGet:
-            path: /ping
-            port: *port
-          initialDelaySeconds: 0
-          periodSeconds: 10
-          timeoutSeconds: 1
-          failureThreshold: 3
-      readiness: *probes
-      startup:
-        enabled: false
-
+      repository: ghcr.io/k8s-at-home/radarr
+      tag: v4.2.4.6635
     ingress:
-      main:
+      dashboard:
         enabled: true
         ingressClassName: "internal"
+        # annotations:
+        #   traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+        #   traefik.ingress.kubernetes.io/router.middlewares: networking-traefik-forward-auth@kubernetescrd
         hosts:
           - host: &host "radarr.${SECRET_DOMAIN}"
             paths:
               - path: /
+                pathType: Prefix
         tls:
           - hosts:
               - *host
-
-
-    podSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
-      fsGroupChangePolicy: "OnRootMismatch"
-      supplementalGroups:
-        - 65539
-
-    volumeClaimTemplates:
-      - name: config
-        mountPath: /config
-        accessMode: ReadWriteOnce
-        size: 2Gi
-        storageClass: longhorn
-
     persistence:
+      config:
+        enabled: true
+        mountPath: /config
       media:
         enabled: true
-        type: nfs
-        server: 10.32.1.5
-        path: /mnt/lab-pool/k3s-nfs/Media
-        mountPath: /media
-
-    resources:
-      requests:
-        cpu: 15m
-        memory: 164M
-      limits:
-        memory: 1408M
+        type: custom
+        accessMode: ReadWriteMany
+        mountPath: /mnt/media
+        volumeSpec:
+          nfs:
+            server: 10.32.1.5
+            path: /mnt/lab-pool/k3s-nfs/Media
+    securityContext:
+      runAsUser: root
+      runAsGroup: wheel
+    env:
+      TZ: "${TIMEZONE}"
+    metrics:
+      enabled: true
+      serviceMonitor:
+        interval: 3m
+        scrapeTimeout: 1m
+      prometheusRule:
+        enabled: true
+      exporter:
+        image:
+          repository: ghcr.io/onedr0p/exportarr
+          tag: v1.6.0
+        env:
+          port: 9794
+          additionalMetrics: true
+          unknownQueueItems: true
