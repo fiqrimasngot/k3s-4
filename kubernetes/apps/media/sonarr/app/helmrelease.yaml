@@ -62,11 +62,28 @@ spec:
     persistence:
       config:
         enabled: true
-        storageClass: longhorn
+        storageClass: nfs-kube
       media:
         enabled: true
         mountPath: /tv-shows
         existingClaim: tv-shows
+---
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: tv-shows
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 100Gi
+  nfs:
+    path: "/mnt/lab-pool/k3s-nfs/TV-Shows"
+    server: "10.32.1.5"
+  storageClassName: tv-shows
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -76,7 +93,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: longhorn
   resources:
     requests:
-      storage: 2Gi  
+      storage: 100Gi
+  storageClassName: tv-shows
+  volumeMode: Filesystem

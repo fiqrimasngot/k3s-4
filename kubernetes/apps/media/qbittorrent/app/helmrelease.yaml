@@ -46,15 +46,11 @@ spec:
     persistence:
       config:
         enabled: true
-        existingClaim: pvc-qb-config
+        storageClass: nfs-kube
       media:
-        enabled: false
-        # type: custom
-        # volumeSpec:
-        #   nfs:
-        #     server: ${SECRET_NAS1}
-        #     path: /mnt/fatguys/Media
-        # mountPath: /media
+        enabled: true
+        mountPath: /media
+        existingClaim: media
 
     podSecurityContext:
       supplementalGroups:
@@ -82,14 +78,31 @@ spec:
         memory: "4000Mi"
 ---
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 100Gi
+  nfs:
+    path: "/mnt/lab-pool/k3s-nfs/Media"
+    server: "10.32.1.5"
+  storageClassName: media
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-qb-config
+  name: media
   namespace: media
 spec:
   accessModes:
-  - ReadWriteMany
-  storageClassName: longhorn
+    - ReadWriteMany
   resources:
     requests:
-      storage: 1Mi       
+      storage: 100Gi
+  storageClassName: media
+  volumeMode: Filesystem
