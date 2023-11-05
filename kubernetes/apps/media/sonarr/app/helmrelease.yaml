@@ -22,11 +22,11 @@ spec:
     remediation:
       retries: 3
       remediateLastFailure: true
-      # cleanupOnFail: true
+      cleanupOnFail: true
   rollback:
     timeout: 10m
     recreate: true
-    # cleanupOnFail: true
+    cleanupOnFail: true
   # dependsOn:
   #   - name: nfs-subdir-external-provisioner
   #     namespace: storage
@@ -52,7 +52,7 @@ spec:
           hajimari.io/icon: television-box
           hajimari.io/group: Internal
         hosts:
-          - host: &host "sonarr.${SECRET_DOMAIN}"
+          - host: &host "sonarr.${DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
@@ -67,7 +67,6 @@ spec:
         enabled: true
         mountPath: /tv-shows
         existingClaim: tv-shows
----
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -84,6 +83,13 @@ spec:
   storageClassName: tv-shows
   volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=3
+    - tcp
+    - intr
+    - hard
+    - noatime
+    - nodiratime    
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
