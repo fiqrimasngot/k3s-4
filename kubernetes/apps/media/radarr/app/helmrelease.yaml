@@ -1,11 +1,9 @@
----
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: radarr
   namespace: media
 spec:
-  interval: 5m
   chart:
     spec:
       # renovate: registryUrl=https://k8s-at-home.com/charts/
@@ -15,56 +13,96 @@ spec:
         kind: HelmRepository
         name: k8s-at-home-charts
         namespace: flux-system
-      interval: 5m
+  interval: 15m
+  timeout: 5m
+  releaseName: radarr
   values:
     image:
-      repository: ghcr.io/k8s-at-home/radarr
-      tag: v4.2.4.6635
+      # -- image repository
+      repository: ghcr.io/onedr0p/radarr
+      # -- image tag
+      tag: 5.0.3.8127
+      # -- image pull policy
+      pullPolicy: IfNotPresent
+
+    # -- environment variables.
+    # @default -- See below
+    env:
+      # -- Set the container timezone
+      TZ: ${TIMEZONE}
+      # HOST_WHITELIST_ENTRIES:
+
+    # -- Configures service settings for the chart.
+    # @default -- See values.yaml
+    service:
+      main:
+        ports:
+          http:
+            port: 7878
+
+    initContainers:
+      update-volume-permissions:
+        image: busybox:1.35.0
+        command: ["/bin/sh", "-c"]
+        args: ["chown -R 1000:1000 /config; chown -R 1000:1000 /download"]
+        volumeMounts:
+          - name: config
+            mountPath: /config
+          - name: downloads
+            mountPath: /download
+        securityContext:
+          runAsUser: 0
+
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      fsGroupChangePolicy: "OnRootMismatch"
+
     ingress:
-      dashboard:
+      main:
         enabled: true
         ingressClassName: "internal"
-        # annotations:
-        #   traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-        #   traefik.ingress.kubernetes.io/router.middlewares: networking-traefik-forward-auth@kubernetescrd
+        annotations:
+          # kubernetes.io/ingress.class: "nginx-internal"
         hosts:
-          - host: &host "radarr.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                pathType: Prefix
+        - host: &host "radarr.${SECRET_DOMAIN}"
+          paths:
+          - path: /
         tls:
-          - hosts:
-              - *host
+        - hosts:
+          - *host
+
+    # -- Configure persistence settings for the chart under this key.
+    # @default -- See values.yaml
     persistence:
       config:
         enabled: true
-        mountPath: /config
-      media:
+        size: 20Gi
+
+      # downloads:
+      #   enabled: true
+      #   type: pvc
+      #   existingClaim: media-pv-pvc-claim
+      #   mountPath: /download
+
+      movies:
         enabled: true
         type: custom
-        accessMode: ReadWriteMany
-        mountPath: /mnt/media
         volumeSpec:
           nfs:
-            server: "10.32.1.5"
-            path: /mnt/lab-pool/k3s-nfs/Media
-    # securityContext:
-    #   runAsUser: "2000"
-    #   runAsGroup: "2000"
-    env:
-      TZ: "${TIMEZONE}"
-    metrics:
-      enabled: true
-      serviceMonitor:
-        interval: 3m
-        scrapeTimeout: 1m
-      prometheusRule:
+            path: /mnt/lab-pool/k3s-nfs/Movies
+            server: 10.32.1.5
+        mountPath: /movies
+
+      tv:
         enabled: true
-      exporter:
-        image:
-          repository: ghcr.io/onedr0p/exportarr
-          tag: v1.6.0
-        env:
-          port: 9794
-          additionalMetrics: true
-          unknownQueueItems: true
+        type: custom
+        volumeSpec:
+          nfs:
+            path: /mnt/lab-pool/k3s-nfs/TV-Shows
+            server: 10.32.1.5
+        mountPath: /tv
+
+    # nodeSelector:
+    #   kubernetes.io/hostname: k3s-master-2
