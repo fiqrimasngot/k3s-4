@@ -22,11 +22,11 @@ spec:
     remediation:
       retries: 3
       remediateLastFailure: true
-      cleanupOnFail: true
+      # cleanupOnFail: true
   rollback:
     timeout: 10m
     recreate: true
-    cleanupOnFail: true
+    # cleanupOnFail: true
   # dependsOn:
   #   - name: nfs-subdir-external-provisioner
   #     namespace: storage
