@@ -67,6 +67,10 @@ spec:
         enabled: true
         mountPath: /movies
         existingClaim: movies
+      downloads:
+        enabled: true
+        mountPath: /downloads
+        existingClaim: media
 ---
 apiVersion: v1
 kind: PersistentVolume
