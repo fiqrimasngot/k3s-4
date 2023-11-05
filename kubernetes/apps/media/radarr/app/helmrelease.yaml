@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://kubernetes-schemas.devbu.io/helm.toolkit.fluxcd.io/helmrelease_v2beta1.json
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
@@ -5,7 +6,7 @@ metadata:
   name: radarr
   namespace: media
 spec:
-  interval: 10m
+  interval: 30m
   chart:
     spec:
       chart: app-template
@@ -14,7 +15,7 @@ spec:
         kind: HelmRepository
         name: bjw-s-charts
         namespace: flux-system
-  maxHistory: 3
+  maxHistory: 2
   install:
     createNamespace: true
     remediation:
@@ -25,97 +26,85 @@ spec:
       retries: 3
   uninstall:
     keepHistory: false
+
   values:
+    controller:
+      type: statefulset
+
     image:
       repository: ghcr.io/onedr0p/radarr-develop
-      tag: 4.7.5.7809@sha256:f2044d2e8bd2e8d24e8a79f051404be80400f450a94b4c481cbc93cfeffbe745
+      tag: 5.1.2.8207@sha256:7e026aae3fa4ac9d4066a0533fdbfaa35a0ccdc41033bc4f2460aa9401ecfb46
+
     env:
       TZ: ${TIMEZONE}
+      RADARR__AUTHENTICATION_METHOD: External
+      RADARR__AUTHENTICATION_REQUIRED: DisabledForLocalAddresses
       RADARR__INSTANCE_NAME: Radarr
-      RADARR__PORT: &port 80
+      RADARR__PORT: &port 7878
+      RADARR__APPLICATION_URL: "https://radarr.${SECRET_DOMAIN}"
       RADARR__LOG_LEVEL: info
-      RADARR__POSTGRES_HOST: "postgresql.storage"
-      RADARR__POSTGRES_MAIN_DB: "radarr"
-      RADARR__POSTGRES_LOG_DB: "radarr-log"
-      RADARR__POSTGRES_PASSWORD:
-        valueFrom:
-          secretKeyRef:
-            name: cluster-media-secrets
-            key: "RADARR_0_POSTGRES_PASSWORD"
-      RADARR__POSTGRES_USER:
-        valueFrom:
-          secretKeyRef:
-            name: cluster-media-secrets
-            key: "RADARR_0_POSTGRES_USER"
-      RADARR__API_KEY:
-        valueFrom:
-          secretKeyRef:
-            name: cluster-media-secrets
-            key: "RADARR_0_API_KEY"
+
     service:
       main:
         ports:
           http:
             port: *port
+
+    probes:
+      liveness: &probes
+        enabled: true
+        custom: true
+        spec:
+          httpGet:
+            path: /ping
+            port: *port
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+      readiness: *probes
+      startup:
+        enabled: false
+
     ingress:
       main:
         enabled: true
-        ingressClassName: internal
+        ingressClassName: "internal"
         hosts:
-          - host: "radarr.${SECRET_DOMAIN}"
+          - host: &host "radarr.${SECRET_DOMAIN}"
             paths:
               - path: /
-                pathType: Prefix
         tls:
           - hosts:
-              - "radarr.${SECRET_DOMAIN}"
+              - *host
+
+
     podSecurityContext:
       runAsUser: 568
       runAsGroup: 568
       fsGroup: 568
       fsGroupChangePolicy: "OnRootMismatch"
       supplementalGroups:
-        - 100
+        - 65539
+
+    volumeClaimTemplates:
+      - name: config
+        mountPath: /config
+        accessMode: ReadWriteOnce
+        size: 2Gi
+        storageClass: longhorn
+
     persistence:
-      config:
-        enabled: true
-        existingClaim: apps-media
-        subPath: radarr
       media:
         enabled: true
+        type: nfs
+        server: 10.32.1.5
+        path: /mnt/lab-pool/k3s-nfs/Media
         mountPath: /media
-        existingClaim: media
+
     resources:
       requests:
-        cpu: 10m
-        memory: 250Mi
+        cpu: 15m
+        memory: 164M
       limits:
-        memory: 2000Mi
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: apps-media
-spec:
-  accessModes:
-    - ReadWriteMany
-  capacity:
-    storage: 10Gi
-  nfs:
-    path: /mnt/lab-pool/k3s-nfs/Media
-    server: "10.32.1.5"
-  storageClassName: apps-media
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: apps-media
-  namespace: media
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: apps-media
+        memory: 1408M
