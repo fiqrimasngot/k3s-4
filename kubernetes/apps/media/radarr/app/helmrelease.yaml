@@ -5,140 +5,117 @@ metadata:
   name: radarr
   namespace: media
 spec:
-  interval: 5m
+  interval: 10m
   chart:
     spec:
-      # renovate: registryUrl=https://k8s-at-home.com/charts/
-      chart: radarr
-      version: 16.3.2
+      chart: app-template
+      version: 1.5.1
       sourceRef:
         kind: HelmRepository
-        name: k8s-at-home-charts
+        name: bjw-s-charts
         namespace: flux-system
-      interval: 5m
+  maxHistory: 3
   install:
-    timeout: 10m
+    createNamespace: true
     remediation:
       retries: 3
   upgrade:
-    timeout: 10m
+    cleanupOnFail: true
     remediation:
       retries: 3
-      remediateLastFailure: true
-    cleanupOnFail: true
-  rollback:
-    timeout: 10m
-    recreate: true
-    cleanupOnFail: true
+  uninstall:
+    keepHistory: false
   values:
     image:
-      repository: ghcr.io/k8s-at-home/radarr
-      tag: v4.2.4.6635
-    updateStrategy: Recreate
+      repository: ghcr.io/onedr0p/radarr-develop
+      tag: 4.7.5.7809@sha256:f2044d2e8bd2e8d24e8a79f051404be80400f450a94b4c481cbc93cfeffbe745
     env:
-      TZ: "${TIMEZONE}"
+      TZ: ${TIMEZONE}
+      RADARR__INSTANCE_NAME: Radarr
+      RADARR__PORT: &port 80
+      RADARR__LOG_LEVEL: info
+      RADARR__POSTGRES_HOST: "postgresql.storage"
+      RADARR__POSTGRES_MAIN_DB: "radarr"
+      RADARR__POSTGRES_LOG_DB: "radarr-log"
+      RADARR__POSTGRES_PASSWORD:
+        valueFrom:
+          secretKeyRef:
+            name: cluster-media-secrets
+            key: "RADARR_0_POSTGRES_PASSWORD"
+      RADARR__POSTGRES_USER:
+        valueFrom:
+          secretKeyRef:
+            name: cluster-media-secrets
+            key: "RADARR_0_POSTGRES_USER"
+      RADARR__API_KEY:
+        valueFrom:
+          secretKeyRef:
+            name: cluster-media-secrets
+            key: "RADARR_0_API_KEY"
+    service:
+      main:
+        ports:
+          http:
+            port: *port
     ingress:
       main:
         enabled: true
-        ingressClassName: "internal"
-        annotations:
-          # external-dns.alpha.kubernetes.io/target: "ipv4.${SECRET_DOMAIN}"
-          # external-dns/is-public: "false"
-          # hajimari.io/enable: "true"
-          # hajimari.io/icon: "filmstrip"
-          # #traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-          # #traefik.ingress.kubernetes.io/router.middlewares: "networking-basic-auth@kubernetescrd"
-          # nginx.ingress.kubernetes.io/configuration-snippet: |
-          #   proxy_set_header Accept-Encoding "";
-          #   sub_filter '</head>' '<link rel="stylesheet" type="text/css" href="https://theme-park.dev/css/base/radarr/nord.css"></head>';
-          #   sub_filter_once on;
-          # nginx.ingress.kubernetes.io/auth-url: "http://authelia.security.svc.cluster.local/api/verify"
-          # nginx.ingress.kubernetes.io/auth-signin: "https://login.${SECRET_DOMAIN}"
+        ingressClassName: internal
         hosts:
-          - host: &host "radarr.${SECRET_DOMAIN}"
+          - host: "radarr.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
         tls:
-          - secretName: "${SECRET_DOMAIN//./-}-tls"
-            hosts:
-              - *host
-      api:
-        enabled: true
-        ingressClassName: "internal"
-        annotations:
-          #traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-        hosts:
-          - host: &hostapi "radarr.${SECRET_DOMAIN}"
-            paths:
-              - path: /api
-                pathType: Prefix
-        tls:
-          - secretName: "${SECRET_DOMAIN//./-}-tls"
-            hosts:
-              - *hostapi
+          - hosts:
+              - "radarr.${SECRET_DOMAIN}"
     podSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+      fsGroupChangePolicy: "OnRootMismatch"
       supplementalGroups:
         - 100
-    metrics:
-      enabled: true
-      serviceMonitor:
-        interval: 3m
-        scrapeTimeout: 1m
-      prometheusRule:
-        enabled: true
-      exporter:
-        image:
-          repository: ghcr.io/onedr0p/exportarr
-          tag: v1.1.0
-        env:
-          port: 9794
-          additionalMetrics: true
-          unknownQueueItems: false
     persistence:
       config:
         enabled: true
-        existingClaim: radarr-config-v1
+        existingClaim: apps-media
+        subPath: radarr
       media:
         enabled: true
-        type: custom
-        volumeSpec:
-          nfs:
-            server: "10.32.1.5"
-            path: /mnt/lab-pool/k3s-nfs/Media
         mountPath: /media
-    nodeSelector: 
-      worker: yes
+        existingClaim: media
     resources:
       requests:
+        cpu: 10m
         memory: 250Mi
-        cpu: 500m
       limits:
-        memory: 1500Mi
-    additionalContainers:
-      fsfreeze:
-        name: fsfreeze
-        image: ubuntu:focal-20210827
-        imagePullPolicy: IfNotPresent
-        command:
-          - "/bin/bash"
-          - "-c"
-          - "sleep infinity"
-        volumeMounts:
-          - name: config
-            mountPath: /config
-        securityContext:
-          privileged: true
+        memory: 2000Mi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: apps-media
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 10Gi
+  nfs:
+    path: /mnt/lab-pool/k3s-nfs/Media
+    server: "10.32.1.5"
+  storageClassName: apps-media
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: radarr-config-v1
+  name: apps-media
   namespace: media
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 2Gi
-  storageClassName: longhorn          
+      storage: 10Gi
+  storageClassName: apps-media
