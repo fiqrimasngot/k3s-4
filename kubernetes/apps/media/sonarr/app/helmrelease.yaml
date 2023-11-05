@@ -52,7 +52,7 @@ spec:
           hajimari.io/icon: television-box
           hajimari.io/group: Internal
         hosts:
-          - host: &host "sonarr.${DOMAIN}"
+          - host: &host "sonarr.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
