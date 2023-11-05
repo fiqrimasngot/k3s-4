@@ -44,11 +44,11 @@ spec:
       # RADARR__APPLICATION_URL: "https://radarr.${SECRET_DOMAIN}"
       # RADARR__LOG_LEVEL: info
 
-    service:
-      main:
-        ports:
-          http:
-            port: *port
+    # service:
+    #   main:
+    #     ports:
+    #       http:
+    #         port: *port
 
     probes:
       liveness: &probes
