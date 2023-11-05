@@ -37,7 +37,7 @@ spec:
     persistence:
       config:
         enabled: true
-        storageClass: "longhorn"
+        storageClass: "nfs-kube"
       media:
         enabled: true
         existingClaim: nfs-media-pvc
