@@ -59,45 +59,52 @@ spec:
         tls:
           - hosts:
               - *host
+           
     persistence:
       config:
         enabled: true
         storageClass: nfs-kube
       media:
         enabled: true
-        mountPath: /movies
-        existingClaim: movies
+        type: nfs
+        server: "10.32.1.5"
+        path: /mnt/lab-pool/k3s-nfs/Movies
+        globalMounts:
+          - path: /movies   
       downloads:
         enabled: true
-        mountPath: /downloads
-        existingClaim: media
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: movies
-spec:
-  accessModes:
-    - ReadWriteMany
-  capacity:
-    storage: 100Gi
-  nfs:
-    path: "/mnt/lab-pool/k3s-nfs/Movies"
-    server: "10.32.1.5"
-  storageClassName: movies
-  volumeMode: Filesystem
-  persistentVolumeReclaimPolicy: Retain
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: movies
-  namespace: media
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 100Gi
-  storageClassName: movies
-  volumeMode: Filesystem        
+        type: nfs
+        server: "10.32.1.5"
+        path: /mnt/lab-pool/k3s-nfs/Media
+        globalMounts:
+          - path: /downloads   
+# ---
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: movies
+# spec:
+#   accessModes:
+#     - ReadWriteMany
+#   capacity:
+#     storage: 100Gi
+#   nfs:
+#     path: "/mnt/lab-pool/k3s-nfs/Movies"
+#     server: "10.32.1.5"
+#   storageClassName: movies
+#   volumeMode: Filesystem
+#   persistentVolumeReclaimPolicy: Retain
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: movies
+#   namespace: media
+# spec:
+#   accessModes:
+#     - ReadWriteMany
+#   resources:
+#     requests:
+#       storage: 100Gi
+#   storageClassName: movies
+#   volumeMode: Filesystem        
