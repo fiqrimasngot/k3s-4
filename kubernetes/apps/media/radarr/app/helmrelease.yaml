@@ -78,7 +78,7 @@ spec:
     persistence:
       config:
         enabled: true
-        size: 20Gi
+        size: 2Gi
 
       downloads:
         enabled: true
