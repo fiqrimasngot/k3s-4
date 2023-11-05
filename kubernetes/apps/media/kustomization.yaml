@@ -9,5 +9,5 @@ resources:
   - ./ghost-02/ks.yaml
   - ./jackett/ks.yaml
   - ./radarr/ks.yaml
-  - ./sonarr/ks.yaml
-  - ./qbittorrent/ks.yaml
+  # - ./sonarr/ks.yaml
+  # - ./qbittorrent/ks.yaml
