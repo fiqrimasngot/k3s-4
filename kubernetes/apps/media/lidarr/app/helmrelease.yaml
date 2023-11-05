@@ -1,0 +1,74 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: lidarr
+  namespace: media
+spec:
+  interval: 5m
+  chart:
+    spec:
+      # renovate: registryUrl=https://k8s-at-home.com/charts/
+      chart: lidarr
+      version: 14.2.2
+      sourceRef:
+        kind: HelmRepository
+        name: k8s-at-home-charts
+        namespace: flux-system
+      interval: 5m
+  values:
+    image:
+      repository: ghcr.io/k8s-at-home/lidarr-nightly
+      tag: v1.1.1.2767
+    env:
+      TZ: "${TIMEZONE}"
+    ingress:
+      main:
+        enabled: true
+        ingressClassName: internal
+        annotations:
+          hajimari.io/enable: "true"
+          hajimari.io/icon: "music-box"
+          # cert-manager.io/cluster-issuer: "letsencrypt-production"
+        hosts:
+          - host: &host "lidarr.${SECRET_DOMAIN}"
+            paths:
+              - path: /
+                pathType: Prefix
+        tls:
+          - hosts:
+              - *host
+    podSecurityContext:
+      runAsUser: 0
+    metrics:
+      enabled: true
+      serviceMonitor:
+        interval: 3m
+        scrapeTimeout: 1m
+      prometheusRule:
+        enabled: true
+    persistence:
+      config:
+        enabled: true
+        storageClass: longhorn
+      media:
+        enabled: true
+        type: nfs
+        server: "10.32.1.5"
+        path: /mnt/lab-pool/k3s-nfs/Musics
+        globalMounts:
+          - path: /media
+      downloads:
+        enabled: true
+        type: nfs
+        server: "10.32.1.5"
+        path: /mnt/lab-pool/k3s-nfs/Media
+        globalMounts:
+          - path: /downloads            
+
+    resources:
+      requests:
+        memory: 250Mi
+        cpu: 250m
+      limits:
+        memory: 1500Mi
