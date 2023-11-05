@@ -49,8 +49,8 @@ spec:
             server: 10.32.1.5
             path: /mnt/lab-pool/k3s-nfs/Media
     securityContext:
-      runAsUser: root
-      runAsGroup: wheel
+      runAsUser: 0
+      runAsGroup: 0
     env:
       TZ: "${TIMEZONE}"
     metrics:
