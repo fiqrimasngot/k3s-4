@@ -38,7 +38,7 @@ spec:
     persistence:
       config:
         enabled: true
-        storageClass: "longhorn"
+        storageClass: "nfs-kube"
         accessMode: ReadWriteOnce
         size: "1Gi"
     resources:
