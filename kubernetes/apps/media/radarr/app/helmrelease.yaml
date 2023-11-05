@@ -46,7 +46,7 @@ spec:
         mountPath: /mnt/media
         volumeSpec:
           nfs:
-            server: 10.32.1.5
+            server: "10.32.1.5"
             path: /mnt/lab-pool/k3s-nfs/Media
     # securityContext:
     #   runAsUser: "2000"
