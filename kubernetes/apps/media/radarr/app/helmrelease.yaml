@@ -37,12 +37,12 @@ spec:
 
     env:
       TZ: ${TIMEZONE}
-      RADARR__AUTHENTICATION_METHOD: External
-      RADARR__AUTHENTICATION_REQUIRED: DisabledForLocalAddresses
-      RADARR__INSTANCE_NAME: Radarr
-      RADARR__PORT: &port 7878
-      RADARR__APPLICATION_URL: "https://radarr.${SECRET_DOMAIN}"
-      RADARR__LOG_LEVEL: info
+      # RADARR__AUTHENTICATION_METHOD: External
+      # RADARR__AUTHENTICATION_REQUIRED: DisabledForLocalAddresses
+      # RADARR__INSTANCE_NAME: Radarr
+      # RADARR__PORT: &port 7878
+      # RADARR__APPLICATION_URL: "https://radarr.${SECRET_DOMAIN}"
+      # RADARR__LOG_LEVEL: info
 
     service:
       main:
