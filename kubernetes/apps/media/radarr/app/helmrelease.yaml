@@ -37,7 +37,7 @@ spec:
   values:
     image:
       repository: linuxserver/radarr
-      tag: nightly-version-4.0.0.5216
+      tag: nightly-version-5.1.3.8226
     env:
       TZ: "${TIMEZONE}"
     # podAnnotations:
