@@ -37,7 +37,7 @@ spec:
   values:
     image:
       repository: linuxserver/sonarr
-      tag: develop-version-3.0.6.1301
+      tag: develop-version-3.0.9.1555
     env:
       TZ: "${TIMEZONE}"
     # podAnnotations:
