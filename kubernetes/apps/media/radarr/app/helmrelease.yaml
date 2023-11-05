@@ -1,64 +1,26 @@
+---
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
   name: radarr
   namespace: media
 spec:
+  interval: 5m
   chart:
     spec:
-      # renovate: registryUrl=https://k8s-at-home.com/charts/
       chart: radarr
-      version: 16.3.2
+      version: 15.1.0
       sourceRef:
         kind: HelmRepository
         name: k8s-at-home-charts
         namespace: flux-system
-  interval: 15m
-  timeout: 5m
-  releaseName: radarr
+      interval: 5m
   values:
-    image:
-      # -- image repository
-      repository: ghcr.io/onedr0p/radarr
-      # -- image tag
-      tag: 5.0.3.8127
-      # -- image pull policy
-      pullPolicy: IfNotPresent
-
-    # -- environment variables.
-    # @default -- See below
+    controllerType: deployment
     env:
-      # -- Set the container timezone
-      TZ: ${TIMEZONE}
-      # HOST_WHITELIST_ENTRIES:
-
-    # -- Configures service settings for the chart.
-    # @default -- See values.yaml
-    service:
-      main:
-        ports:
-          http:
-            port: 7878
-
-    initContainers:
-      update-volume-permissions:
-        image: busybox:1.35.0
-        command: ["/bin/sh", "-c"]
-        args: ["chown -R 1000:1000 /config; chown -R 1000:1000 /download"]
-        volumeMounts:
-          - name: config
-            mountPath: /config
-          - name: downloads
-            mountPath: /download
-        securityContext:
-          runAsUser: 0
-
-    podSecurityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      fsGroup: 1000
-      fsGroupChangePolicy: "OnRootMismatch"
-
+      TZ: "${TIMEZONE}"
+      PUID: "8675309"
+      PGID: "8675309"
     ingress:
       main:
         enabled: true
@@ -66,46 +28,61 @@ spec:
         annotations:
           # kubernetes.io/ingress.class: "nginx-internal"
         hosts:
-        - host: &host "radarr.${SECRET_DOMAIN}"
+        - host: &host radarr.${SECRET_DOMAIN}
           paths:
           - path: /
         tls:
         - hosts:
           - *host
-
-    # -- Configure persistence settings for the chart under this key.
-    # @default -- See values.yaml
     persistence:
       config:
         enabled: true
-        size: 2Gi
-
-      downloads:
+        storageClass: "longhorn"
+      media:
         enabled: true
-        type: custom
-        volumeSpec:
-          nfs:
-            path: /mnt/lab-pool/k3s-nfs/Media
-            server: 10.32.1.5
-        mountPath: /download
-
-      movies:
-        enabled: true
-        type: custom
-        volumeSpec:
-          nfs:
-            path: /mnt/lab-pool/k3s-nfs/Movies
-            server: 10.32.1.5
-        mountPath: /movies
-
-      tv:
-        enabled: true
-        type: custom
-        volumeSpec:
-          nfs:
-            path: /mnt/lab-pool/k3s-nfs/TV-Shows
-            server: 10.32.1.5
-        mountPath: /tv
-
-    # nodeSelector:
-    #   kubernetes.io/hostname: k3s-master-2
+        existingClaim: nfs-media-pvc
+        mountPath: "/mnt/media"
+    resources:
+      requests:
+        memory: 250Mi
+        cpu: 500m
+      limits:
+        memory: 1500Mi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: media
+  name: nfs-media-pv
+spec:
+  storageClassName: media
+  capacity:
+    storage: 5Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  # mountOptions:
+  #   - hard
+  #   - nfsvers=3
+  claimRef:
+    namespace: media
+    name: nfs-media-pvc
+  nfs:
+    path: /mnt/lab-pool/k3s-nfs/Movies
+    server: 10.32.1.5
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: media
+  name: nfs-media-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: media
+  volumeName: nfs-media-pv
