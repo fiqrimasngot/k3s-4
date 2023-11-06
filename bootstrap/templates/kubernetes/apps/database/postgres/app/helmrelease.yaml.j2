@@ -1,0 +1,46 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+    name: &app postgres
+    namespace: database
+spec:
+    interval: 10m
+    chart:
+        spec:
+            chart: postgresql
+            version: 13.0.0
+            sourceRef:
+                kind: HelmRepository
+                name: bitnami
+                namespace: flux-system
+    values:
+        fullnameOverride: *app
+        global:
+            postgresql:
+                auth:
+                    password: ${POSTGRES_SUPER_PASS}
+        primary:
+            initdb:
+                user: postgres
+                scripts:
+                    windmill.sql: |
+                        CREATE DATABASE "k3s" OWNER postgres;
+            persistence:
+                enabled: true
+                existingClaim: postgres
+            startupProbe:
+                enabled: true
+                failureThreshold: 60
+                periodSeconds: 30
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres
+  namespace: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

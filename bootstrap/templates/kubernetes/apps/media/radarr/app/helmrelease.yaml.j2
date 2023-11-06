@@ -2,13 +2,13 @@
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: sonarr
+  name: radarr
   namespace: media
 spec:
   interval: 10m
   chart:
     spec:
-      chart: sonarr
+      chart: radarr
       version: 16.3.2
       sourceRef:
         kind: HelmRepository
@@ -36,8 +36,8 @@ spec:
   #     namespace: networking
   values:
     image:
-      repository: linuxserver/sonarr
-      tag: develop-version-3.0.9.1555
+      repository: linuxserver/radarr
+      tag: nightly-version-5.1.3.8226
     env:
       TZ: "${TIMEZONE}"
     # podAnnotations:
@@ -49,16 +49,17 @@ spec:
         annotations:
           # cert-manager.io/cluster-issuer: letsencrypt-production
           hajimari.io/enable: 'true'
-          hajimari.io/icon: television-box
+          hajimari.io/icon: movie-search
           hajimari.io/group: Internal
         hosts:
-          - host: &host "sonarr.${SECRET_DOMAIN}"
+          - host: &host "radarr.${SECRET_DOMAIN}"
             paths:
               - path: /
                 pathType: Prefix
         tls:
           - hosts:
               - *host
+           
     persistence:
       config:
         enabled: true
@@ -67,9 +68,9 @@ spec:
         enabled: true
         type: nfs
         server: "${SECRET_BACKUP_SERVER}"
-        path: /mnt/lab-pool/k3s-nfs/TV-Shows
+        path: /mnt/lab-pool/k3s-nfs/Movies
         globalMounts:
-          - path: /media   
+          - path: /movies   
       downloads:
         enabled: true
         type: nfs

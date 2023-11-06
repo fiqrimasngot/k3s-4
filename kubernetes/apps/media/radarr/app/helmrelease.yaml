@@ -67,14 +67,14 @@ spec:
       media:
         enabled: true
         type: nfs
-        server: "10.32.1.5"
+        server: "${SECRET_BACKUP_SERVER}"
         path: /mnt/lab-pool/k3s-nfs/Movies
         globalMounts:
           - path: /movies   
       downloads:
         enabled: true
         type: nfs
-        server: "10.32.1.5"
+        server: "${SECRET_BACKUP_SERVER}"
         path: /mnt/lab-pool/k3s-nfs/Media
         globalMounts:
           - path: /downloads   
@@ -90,7 +90,7 @@ spec:
 #     storage: 100Gi
 #   nfs:
 #     path: "/mnt/lab-pool/k3s-nfs/Movies"
-#     server: "10.32.1.5"
+#     server: "${SECRET_BACKUP_SERVER}"
 #   storageClassName: movies
 #   volumeMode: Filesystem
 #   persistentVolumeReclaimPolicy: Retain

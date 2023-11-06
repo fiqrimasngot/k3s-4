@@ -1,0 +1,14 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Pre Flux-Kustomizations
+  - ./namespace.yaml
+  # Website
+  - ./ghost-01/ks.yaml
+  - ./ghost-02/ks.yaml
+  - ./jackett/ks.yaml
+  - ./radarr/ks.yaml
+  - ./sonarr/ks.yaml
+  - ./lidarr/ks.yaml
+  - ./qbittorrent/ks.yaml

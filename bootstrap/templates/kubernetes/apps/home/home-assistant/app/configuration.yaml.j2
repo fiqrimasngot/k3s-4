@@ -1,0 +1,11 @@
+default_config:
+automation: !include automations.yaml
+recorder:
+  db_url: postgresql://postgres:{{ bootstrap_authelia_storage_postgres_password }}@postgres.database.svc.cluster.local/home-assistant?sslmode=disable
+homeassistant:
+  # customize: !include customize.yaml
+  external_url: https://ha.{{ bootstrap_cloudflare_domain }}
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 0.0.0.0/0
