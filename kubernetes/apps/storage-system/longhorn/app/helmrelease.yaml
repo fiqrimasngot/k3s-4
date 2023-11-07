@@ -22,7 +22,7 @@ spec:
       retries: 5
   values:
     defaultSettings:
-      # backupTarget: "nfs://${NAS0_IP}:/volume1/longhorn-backups"
+      backupTarget: "nfs://${SECRET_BACKUP_SERVER}:/mnt/lab-pool/k3s-nfs/vm-backup"
       defaultReplicaCount: 3
     longhornUI:
       replicas: 3
