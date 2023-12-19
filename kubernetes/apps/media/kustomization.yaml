@@ -7,9 +7,8 @@ resources:
   # Website
   - ./ghost-01/ks.yaml
   - ./ghost-02/ks.yaml
-  - ./ghost-03/ks.yaml
-  # - ./jackett/ks.yaml
-  # - ./radarr/ks.yaml
-  # - ./sonarr/ks.yaml
-  # - ./lidarr/ks.yaml
-  # - ./qbittorrent/ks.yaml
+  - ./jackett/ks.yaml
+  - ./radarr/ks.yaml
+  - ./sonarr/ks.yaml
+  - ./lidarr/ks.yaml
+  - ./qbittorrent/ks.yaml

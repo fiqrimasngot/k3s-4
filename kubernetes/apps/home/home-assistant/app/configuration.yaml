@@ -4,7 +4,7 @@ recorder:
   db_url: postgresql://postgres:43098d77d215ee6b946b0edebb7396a7@postgres.database.svc.cluster.local/home-assistant?sslmode=disable
 homeassistant:
   # customize: !include customize.yaml
-  external_url: https://ha.friendstargolf.com
+  external_url: https://ha.amdglobal.com.my
 http:
   use_x_forwarded_for: true
   trusted_proxies:
